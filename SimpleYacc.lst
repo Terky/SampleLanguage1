@@ -1,0 +1,99 @@
+
+// ==========================================================================
+//  GPPG error listing for yacc source file <SimpleYacc.y>
+// ==========================================================================
+//  Version:  1.3.6
+//  Machine:  DESKTOP-0KBKC6T
+//  DateTime: 10/7/2017 12:39:34 PM
+//  UserName: Coelum
+// ==========================================================================
+
+
+%{
+// Ýòè îáúÿâëåíèÿ äîáàâëÿþòñÿ â êëàññ GPPGParser, ïðåäñòàâëÿþùèé ñîáîé ïàðñåð, ãåíåðèðóåìûé ñèñòåìîé gppg
+    public BlockNode root; // Êîðíåâîé óçåë ñèíòàêñè÷åñêîãî äåðåâà 
+    public Parser(AbstractScanner<ValueType, LexLocation> scanner) : base(scanner) { }
+%}
+
+%output = SimpleYacc.cs
+
+%union { 
+			public double dVal; 
+			public int iVal; 
+			public string sVal; 
+			public Node nVal;
+			public ExprNode eVal;
+			public StatementNode stVal;
+			public BlockNode blVal;
+       }
+
+%using ProgramTree;
+
+%namespace SimpleParser
+
+%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS
+%token <iVal> INUM 
+%token <dVal> RNUM 
+%token <sVal> ID
+
+%type <eVal> expr ident 
+%type <stVal> assign statement cycle 
+%type <blVal> stlist block
+
+%%
+// Warning: Terminating cycle fixes the following size-6 NonTerminal set
+   // {statement, cycle, stlist, block, progr, $accept}
+// Warning: Terminating expr fixes the following size-8 NonTerminal set
+   // {expr, assign, statement, cycle, stlist, block, progr, $accept}
+// Warning: The following 4 symbols form a non-terminating cycle 
+   // {cycle, stlist, block, statement}
+// Error: There are 8 non-terminating NonTerminal Symbols
+   //  {expr, assign, statement, cycle, stlist, block, progr, $accept}
+// ---------------------------------------------------------------------
+
+progr   : block { root = $1; }
+		;
+
+stlist	: statement 
+			{ 
+				$$ = new BlockNode($1); 
+			}
+		| stlist SEMICOLON statement 
+			{ 
+				$1.Add($3); 
+				$$ = $1; 
+			}
+		;
+
+statement: assign { $$ = $1; }
+		| block   { $$ = $1; }
+		| cycle   { $$ = $1; }
+	;
+
+ident 	: ID { $$ = new IdNode($1); }	
+		;
+	
+assign 	: ident ASSIGN expr { $$ = new AssignNode($1 as IdNode, $3); }
+		;
+
+term    : ident  { $$ = $1 as IdNode; }
+		| INUM { $$ = new IntNumNode($1); }
+		;
+
+expr	: expr PLUS term { $$ = new BinExprNode($1, $3, $2) }
+		| expr MINUS term { $$ = new BinExprNode($1, $3, $2) }
+		| term
+
+block	: BEGIN stlist END { $$ = $2; }
+//^^^
+// Error: Syntax error, unexpected anchoredSymbol
+// ----------------------------------------------
+		;
+
+cycle	: CYCLE expr statement { $$ = new CycleNode($2, $3); }
+		;
+	
+%%
+
+// ==========================================================================
+
