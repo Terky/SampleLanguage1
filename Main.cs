@@ -22,7 +22,7 @@ namespace SimpleCompiler
 
                 var b = parser.Parse();
                 if (!b)
-                    Console.WriteLine("ЕГГОГ"); //Ошибка
+                    Console.WriteLine("Error"); //Ошибка
                 else
                 {
                     Console.WriteLine("Sytax tree has built"); //Синтаксическое дерево построено
@@ -33,7 +33,7 @@ namespace SimpleCompiler
             }
             catch (FileNotFoundException)
             {
-                Console.WriteLine("Файл {0} не найден", FileName);
+                Console.WriteLine("File {0} not found", FileName); //Файл {0} не найден
             }
             catch (LexException e)
             {

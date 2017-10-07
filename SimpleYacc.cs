@@ -3,9 +3,9 @@
 // (see accompanying GPPGcopyright.rtf)
 
 // GPPG version 1.3.6
-// Machine:  DESKTOP-0KBKC6T
-// DateTime: 10/7/2017 1:05:23 PM
-// UserName: Coelum
+// Machine:  DESKTOP-UBUV8QQ
+// DateTime: 10/7/2017 9:10:55 PM
+// UserName: artem
 // Input file <SimpleYacc.y>
 
 // options: no-lines gplex

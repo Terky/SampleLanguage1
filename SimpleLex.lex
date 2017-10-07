@@ -45,16 +45,16 @@ ID {Alpha}{AlphaDigit}*
 
 %%
 
-public override void yyerror(string format, params object[] args) // обработка синтаксических ошибок
+public override void yyerror(string format, params object[] args) // syntax exception handling
 {
   var ww = args.Skip(1).Cast<string>().ToArray();
-  string errorMsg = string.Format("({0},{1}): Встречено {2}, а ожидалось {3}", yyline, yycol, args[0], string.Join(" или ", ww));
+  string errorMsg = string.Format("({0},{1}): Found {2}, expect {3}", yyline, yycol, args[0], string.Join(" or ", ww));
   throw new SyntaxException(errorMsg);
 }
 
 public void LexError()
 {
-  string errorMsg = string.Format("({0},{1}): Неизвестный символ {2}", yyline, yycol, yytext);
+  string errorMsg = string.Format("({0},{1}): Unknown symbol {2}", yyline, yycol, yytext);
   throw new LexException(errorMsg);
 }
 

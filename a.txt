@@ -2,11 +2,15 @@ begin
   b := 2;
   a := 3;
   a := b;
+  p := 2 + a;
+  2 + a;
+  2 + 2;
+  a - 2;
+  2 - 2;
+  g := 2 + a - 3;
   cycle 3
   begin
     a := c;
     c := 1
-  end;
-  p := 2 + a;
-  g := 2 + a - 3;
+  end
 end
