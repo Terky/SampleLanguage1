@@ -4,7 +4,7 @@ namespace ProgramTree
 {
     public enum AssignType { Assign, AssignPlus, AssignMinus, AssignMult, AssignDivide };
 
-    public enum OpType { Plus, Minus };
+    public enum OpType { Plus, Minus, Div, Mult };
 
     public class Node // базовый класс для всех узлов    
     {
@@ -47,6 +47,12 @@ namespace ProgramTree
                     break;
                 case OpType.Minus:
                     res -= Right.Eval();
+                    break;
+                case OpType.Mult:
+                    res *= Right.Eval();
+                    break;
+                case OpType.Div:
+                    res /= Right.Eval();
                     break;
             }
             return res;
