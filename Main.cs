@@ -29,7 +29,7 @@ namespace SimpleCompiler
                     //foreach (var st in parser.root.StList)
                     //Console.WriteLine(st);
                 }
-                //root.exec();
+                parser.root.Exec();
             }
             catch (FileNotFoundException)
             {

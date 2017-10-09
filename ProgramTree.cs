@@ -70,8 +70,9 @@ namespace ProgramTree
         }
     }
 
-    public class StatementNode : Node // базовый класс для всех операторов
+    public abstract class StatementNode : Node // базовый класс для всех операторов
     {
+        public abstract void Exec();
     }
 
     public class AssignNode : StatementNode
@@ -85,6 +86,11 @@ namespace ProgramTree
             Expr = expr;
             AssOp = assop;
         }
+        public override void Exec()
+        {
+            Id.Value = Expr.Eval();
+            System.Console.WriteLine("{0} := {1}", Id.Name, Id.Value);
+        }
     }
 
     public class CycleNode : StatementNode
@@ -95,6 +101,14 @@ namespace ProgramTree
         {
             Expr = expr;
             Stat = stat;
+        }
+        public override void Exec()
+        {
+            System.Console.WriteLine("Cycle {0}", Expr.Eval());
+            for (int i = 0; i < Expr.Eval(); ++i)
+            {
+                Stat.Exec();
+            }
         }
     }
 
@@ -109,6 +123,13 @@ namespace ProgramTree
         {
             StList.Add(stat);
         }
+        public override void Exec()
+        {
+            foreach (StatementNode stNode in StList) {
+                stNode.Exec();
+            }
+        }
+
     }
 
 }
