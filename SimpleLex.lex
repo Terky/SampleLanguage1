@@ -27,6 +27,8 @@ ID {Alpha}{AlphaDigit}*
   int res = ScannerHelper.GetIDToken(yytext);
   if (res == (int)Tokens.ID)
 	yylval.sVal = yytext;
+  if (res == (int)Tokens.TYPE)
+	yylval.typeVal = Symbol.ParseType(yytext);
   return res;
 }
 

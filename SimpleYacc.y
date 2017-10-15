@@ -11,6 +11,7 @@
 			public double dVal; 
 			public int iVal; 
 			public string sVal; 
+			public SymbolType typeVal;
 			public Node nVal;
 			public ExprNode eVal;
 			public StatementNode stVal;
@@ -21,7 +22,8 @@
 
 %namespace SimpleParser
 
-%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT VAR COLON TYPE
+%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT VAR COLON
+%token <typeVal> TYPE
 %token <iVal> INUM 
 %token <dVal> RNUM 
 %token <sVal> ID
@@ -32,7 +34,8 @@
 
 %%
 
-progr   : block { root = $1; }
+progr   : block {	top = null;
+					root = $1; }
 		;
 
 stlist	: statement 
@@ -72,7 +75,12 @@ factor  : LEFT_BRACKET expr RIGHT_BRACKET { $$ = $2; }
 		| INUM { $$ = new IntNumNode($1); }
 		;
 
-block	: BEGIN stlist END { $$ = $2; }
+block	: BEGIN	  { SymbolTable saved = top;
+					top = new SymbolTable(top);
+				  }
+
+		 stlist END { $$ = $2;
+					  top = saved; }
 		;
 
 cycle	: CYCLE expr statement { $$ = new CycleNode($2, $3); }
@@ -82,7 +90,9 @@ decls   : decls decl
 		|
 		;
 
-decl	: VAR ID COLON TYPE SEMICOLON { top. }
+decl	: VAR ID COLON TYPE SEMICOLON { Symbol s = new Symbol();
+										s.Type = TYPE;
+										top.add(ID, s); }
 		;
 	
 %%

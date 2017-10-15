@@ -6,7 +6,7 @@ namespace SimpleLang
     {
         private Hashtable table;
         protected SymbolTable prev;
-
+        
         public SymbolTable(SymbolTable prev)
         {
             table = new Hashtable();
