@@ -20,7 +20,7 @@
 
 %namespace SimpleParser
 
-%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT
+%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT VAR COLON TYPE
 %token <iVal> INUM 
 %token <dVal> RNUM 
 %token <sVal> ID
@@ -75,6 +75,13 @@ block	: BEGIN stlist END { $$ = $2; }
 		;
 
 cycle	: CYCLE expr statement { $$ = new CycleNode($2, $3); }
+		;
+
+decls   : decls decl
+		| decl
+		;
+
+decl	: VAR ID COLON TYPE { top. }
 		;
 	
 %%
