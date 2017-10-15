@@ -78,10 +78,10 @@ cycle	: CYCLE expr statement { $$ = new CycleNode($2, $3); }
 		;
 
 decls   : decls decl
-		| decl
+		|
 		;
 
-decl	: VAR ID COLON TYPE { top. }
+decl	: VAR ID COLON TYPE SEMICOLON { top. }
 		;
 	
 %%
