@@ -74,6 +74,9 @@ class ScannerHelper
     keywords.Add("end",(int)Tokens.END);
     keywords.Add("cycle",(int)Tokens.CYCLE);
 	keywords.Add("var", (int)Tokens.VAR);
+	keywords.Add("int", (int)Tokens.TYPE);
+	keywords.Add("double", (int)Tokens.TYPE);
+	keywords.Add("bool", (int)Tokens.TYPE);
   }
   public static int GetIDToken(string s)
   {
