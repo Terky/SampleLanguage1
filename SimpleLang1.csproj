@@ -43,7 +43,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CharTable.cs" />
+    <Compile Include="Symbol.cs" />
+    <Compile Include="SymbolTable.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="ParserHelper.cs" />
     <Compile Include="ProgramTree.cs" />
