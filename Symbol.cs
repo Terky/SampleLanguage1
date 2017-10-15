@@ -11,13 +11,12 @@ namespace SimpleLang
         {
             INT,
             DOUBLE,
-            BOOL,
-            UNKNOWN
+            BOOL
         };
         
-        public SymbolType Type { get; set; }
+        public SymbolType? Type { get; set; }
 
-        public SymbolType ParseType(String str)
+        public SymbolType? ParseType(String str)
         {
             switch (str) {
                 case "int":
@@ -27,7 +26,7 @@ namespace SimpleLang
                 case "bool":
                     return SymbolType.BOOL;
                 default:
-                    return SymbolType.UNKNOWN;
+                    return null;
 
             }
         }
