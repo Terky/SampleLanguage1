@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using SimpleLang;
+using SimpleParser;
 
 namespace ProgramTree
 {
@@ -12,15 +14,18 @@ namespace ProgramTree
 
     public abstract class ExprNode : Node // базовый класс для всех выражений
     {
-        public abstract int Eval();
+        public abstract VarSymbol Eval();
     }
 
     public class IdNode : ExprNode
     {
-        public string Name { get; set; }
         public IdNode(string name) { Name = name; }
-        public int Value { get; set; }
-        public override int Eval()
+
+        public string Name { get; set; }
+
+        public VarSymbol Value { get; set; }
+
+        public override VarSymbol Eval()
         {
             return Value;
         }
@@ -34,25 +39,85 @@ namespace ProgramTree
             Right = right;
             Op = op;
         }
+
         public ExprNode Left { get; set; }
+
         public ExprNode Right { get; set; }
+
         public OpType Op { get; set; }
-        public override int Eval()
+
+        public override VarSymbol Eval()
         {
-            int res = Left.Eval();
+            VarSymbol leftValue = Left.Eval();
+            VarSymbol rightValue = Right.Eval();
+            if (leftValue.Type != rightValue.Type)
+            {
+                if (leftValue.Type == Symbol.ValueType.INT && rightValue.Type == Symbol.ValueType.DOUBLE)
+                {
+                    ParserHelper.upCast(leftValue, Symbol.ValueType.DOUBLE);
+                } else if (leftValue.Type == Symbol.ValueType.DOUBLE && rightValue.Type == Symbol.ValueType.INT)
+                {
+                    ParserHelper.upCast(rightValue, Symbol.ValueType.DOUBLE);
+                } else
+                {
+                    //error
+                }
+            }
+
+            VarSymbol res = new VarSymbol();
             switch (Op)
             {
                 case OpType.Plus:
-                    res += Right.Eval();
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.DOUBLE:
+                            res.Type = Symbol.ValueType.DOUBLE;
+                            res.Value.dValue = leftValue.Value.dValue + rightValue.Value.dValue;
+                            break;
+                        case Symbol.ValueType.INT:
+                            res.Type = Symbol.ValueType.INT;
+                            res.Value.iValue = leftValue.Value.iValue + rightValue.Value.iValue;
+                            break;
+                    }
                     break;
                 case OpType.Minus:
-                    res -= Right.Eval();
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.DOUBLE:
+                            res.Type = Symbol.ValueType.DOUBLE;
+                            res.Value.dValue = leftValue.Value.dValue - rightValue.Value.dValue;
+                            break;
+                        case Symbol.ValueType.INT:
+                            res.Type = Symbol.ValueType.INT;
+                            res.Value.iValue = leftValue.Value.iValue - rightValue.Value.iValue;
+                            break;
+                    }
                     break;
                 case OpType.Mult:
-                    res *= Right.Eval();
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.DOUBLE:
+                            res.Type = Symbol.ValueType.DOUBLE;
+                            res.Value.dValue = leftValue.Value.dValue * rightValue.Value.dValue;
+                            break;
+                        case Symbol.ValueType.INT:
+                            res.Type = Symbol.ValueType.INT;
+                            res.Value.iValue = leftValue.Value.iValue * rightValue.Value.iValue;
+                            break;
+                    }
                     break;
                 case OpType.Div:
-                    res /= Right.Eval();
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.DOUBLE:
+                            res.Type = Symbol.ValueType.DOUBLE;
+                            res.Value.dValue = leftValue.Value.dValue / rightValue.Value.dValue;
+                            break;
+                        case Symbol.ValueType.INT:
+                            res.Type = Symbol.ValueType.INT;
+                            res.Value.iValue = leftValue.Value.iValue / rightValue.Value.iValue;
+                            break;
+                    }
                     break;
             }
             return res;
@@ -64,9 +129,25 @@ namespace ProgramTree
     {
         public int Num { get; set; }
         public IntNumNode(int num) { Num = num; }
-        public override int Eval()
+        public override VarSymbol Eval()
         {
-            return Num;
+            VarSymbol value = new VarSymbol();
+            value.Type = Symbol.ValueType.INT;
+            value.Value.iValue = Num;
+            return value;
+        }
+    }
+
+    public class DoubleNumNode : ExprNode
+    {
+        public double Num { get; set; }
+        public DoubleNumNode(double num) { Num = num; }
+        public override VarSymbol Eval()
+        {
+            VarSymbol value = new VarSymbol();
+            value.Type = Symbol.ValueType.DOUBLE;
+            value.Value.dValue = Num;
+            return value;
         }
     }
 
@@ -88,8 +169,17 @@ namespace ProgramTree
         }
         public override void Exec()
         {
-            Id.Value = Expr.Eval();
-            System.Console.WriteLine("{0} := {1}", Id.Name, Id.Value);
+            //Что здесь вообще должно быть?
+
+            //VarSymbol rValue = Expr.Eval();
+            //if (Id.Value.Type == rValue.Type)
+            //{
+            //    Id.Value = rValue;
+            //    System.Console.WriteLine("{0} := {1}", Id.Name, Id.Value);
+            //} else
+            //{
+            //    //error - несовместимые типы
+            //}
         }
     }
 
@@ -104,8 +194,13 @@ namespace ProgramTree
         }
         public override void Exec()
         {
-            System.Console.WriteLine("Cycle {0}", Expr.Eval());
-            for (int i = 0; i < Expr.Eval(); ++i)
+            VarSymbol val = Expr.Eval();
+            if (val.Type != Symbol.ValueType.INT)
+            {
+                //error
+            }
+            System.Console.WriteLine("Cycle {0}", val.Value.iValue);
+            for (int i = 0; i < val.Value.iValue; ++i)
             {
                 Stat.Exec();
             }

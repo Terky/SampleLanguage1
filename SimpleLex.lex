@@ -27,8 +27,6 @@ ID {Alpha}{AlphaDigit}*
   int res = ScannerHelper.GetIDToken(yytext);
   if (res == (int)Tokens.ID)
 	yylval.sVal = yytext;
-  if (res == (int)Tokens.TYPE)
-	yylval.typeVal = Symbol.ParseType(yytext);
   return res;
 }
 
@@ -76,9 +74,6 @@ class ScannerHelper
     keywords.Add("end",(int)Tokens.END);
     keywords.Add("cycle",(int)Tokens.CYCLE);
 	keywords.Add("var", (int)Tokens.VAR);
-	keywords.Add("int", (int)Tokens.TYPE);
-	keywords.Add("double", (int)Tokens.TYPE);
-	keywords.Add("bool", (int)Tokens.TYPE);
   }
   public static int GetIDToken(string s)
   {

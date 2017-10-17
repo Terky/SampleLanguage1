@@ -1,15 +1,15 @@
-﻿using System.Collections;
+﻿using System.Collections.Generic;
 
 namespace SimpleLang
 {
     public class SymbolTable
     {
-        private Hashtable table;
+        private Dictionary<string, Symbol> table;
         protected SymbolTable prev;
         
         public SymbolTable(SymbolTable prev)
         {
-            table = new Hashtable();
+            table = new Dictionary<string, Symbol>();
             this.prev = prev;
         }
 
