@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using SimpleLang;
 using SimpleParser;
 
@@ -19,7 +20,15 @@ namespace ProgramTree
 
     public class IdNode : ExprNode
     {
-        public IdNode(string name) { Name = name; }
+        public IdNode(string name) {
+            Name = name;
+            VarSymbol s = ParserHelper.top.Get(Name) as VarSymbol;
+            if (s == null)
+            {
+                //error
+            }
+            Value = s;
+        }
 
         public string Name { get; set; }
 
@@ -169,17 +178,17 @@ namespace ProgramTree
         }
         public override void Exec()
         {
-            //Что здесь вообще должно быть?
-
-            //VarSymbol rValue = Expr.Eval();
-            //if (Id.Value.Type == rValue.Type)
-            //{
-            //    Id.Value = rValue;
-            //    System.Console.WriteLine("{0} := {1}", Id.Name, Id.Value);
-            //} else
-            //{
-            //    //error - несовместимые типы
-            //}
+            VarSymbol s = ParserHelper.top.Get(Id.Name) as VarSymbol;
+            if (s == null)
+            {
+                //error
+            }
+            VarSymbol exprVal = Expr.Eval();
+            if (s.Type != exprVal.Type)
+            {
+                //error - несовместимые типы. Нужно сделать совместимыми не только равные типы
+            }
+			s.Value = exprVal.Value;
         }
     }
 
@@ -210,21 +219,48 @@ namespace ProgramTree
     public class BlockNode : StatementNode
     {
         public List<StatementNode> StList = new List<StatementNode>();
+
         public BlockNode(StatementNode stat)
         {
             Add(stat);
         }
+
         public void Add(StatementNode stat)
         {
             StList.Add(stat);
         }
+
         public override void Exec()
         {
+            ParserHelper.saved = ParserHelper.top;
+            ParserHelper.top = new SymbolTable(ParserHelper.top);
             foreach (StatementNode stNode in StList) {
                 stNode.Exec();
             }
+            ParserHelper.top = ParserHelper.saved;
         }
 
     }
 
+    public class DeclNode : StatementNode
+    {
+
+        public string Name { set; get; }
+
+        public string Type { set; get; }
+
+        public DeclNode(string name, string type)
+        {
+            Name = name;
+            Type = type;
+        }
+
+        public override void Exec()
+        {
+            VarSymbol s = new VarSymbol();
+            TypeSymbol t = (ParserHelper.top.Get(Type)) as SimpleLang.TypeSymbol;
+            s.Type = t.Value;
+            ParserHelper.top.Put(Name, s);
+        }
+    }
 }

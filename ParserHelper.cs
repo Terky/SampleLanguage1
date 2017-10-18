@@ -17,6 +17,7 @@ namespace SimpleParser
     {
 
         public static SymbolTable saved;
+        public static SymbolTable top;
 
         public static void upCast(VarSymbol value, Symbol.ValueType type)
         {
