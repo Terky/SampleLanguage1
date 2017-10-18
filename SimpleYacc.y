@@ -26,13 +26,12 @@
 %token <sVal> ID
 
 %type <eVal> expr ident term factor
-%type <stVal> assign statement cycle
+%type <stVal> assign statement cycle decl
 %type <blVal> stlist block
 
 %%
 
-progr   : block { top = null;
-				  root = $1; }
+progr   : block { root = $1; }
 		;
 
 stlist	: statement 
@@ -47,10 +46,13 @@ stlist	: statement
 		;
 
 statement: assign { $$ = $1; }
+		| decl	  { $$ = $1; }
 		| block   { $$ = $1; }
 		| cycle   { $$ = $1; }
-		| decl	  { $$ = $1; }
 	;
+
+decl	: VAR ID COLON ID { $$ = new DeclNode($2, $4); }
+		;
 
 ident 	: ID { $$ = new IdNode($1); }	
 		;
@@ -77,9 +79,6 @@ block	: BEGIN	stlist END { $$ = $2; }
 		;
 
 cycle	: CYCLE expr statement { $$ = new CycleNode($2, $3); }
-		;
-
-decl	: VAR ID COLON ID SEMICOLON { $$ = new DeclNode($2, $3); }
 		;
 	
 %%

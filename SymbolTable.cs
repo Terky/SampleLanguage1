@@ -6,7 +6,7 @@ namespace SimpleLang
     {
         private Dictionary<string, Symbol> table;
         protected SymbolTable prev;
-        
+                
         public SymbolTable(SymbolTable prev)
         {
             table = new Dictionary<string, Symbol>();
@@ -18,13 +18,21 @@ namespace SimpleLang
             table.Add(id, sym);
         }
 
-        public Symbol Get(string id)
+        public Symbol Get(string key)
         {
-            for (SymbolTable ct = this; ct != null; ct = ct.prev)
+            for (SymbolTable st = this; st != null; st = st.prev)
             {
-                Symbol found = (Symbol)ct.table[id];
-                if (found != null)
+                Symbol found;
+                bool suc = st.table.TryGetValue(key, out found);
+                if (!suc && st.prev == null)
+                {
+                    System.Console.WriteLine("SYMBOL {0} NOT FOUND", key);
+
+                }
+                if (found!=null)
+                {
                     return found;
+                }
             }
             return null;
         }

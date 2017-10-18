@@ -7,6 +7,6 @@ namespace SimpleLang
 {
     public class TypeSymbol: Symbol
     {
-        public Symbol.ValueType Value { get; set; }
+        public ValueType Value { get; set; }
     }
 }

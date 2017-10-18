@@ -16,7 +16,12 @@ namespace SimpleLang
             public bool bValue { get; set; }
         }
 
-        public Symbol.ValueType Type { get; set; }
+        public VarSymbol()
+        {
+            Value = new VarValue();
+        }
+
+        public ValueType Type { get; set; }
 
         public VarValue Value { get; set; }
     }

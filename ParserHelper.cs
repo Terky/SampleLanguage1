@@ -16,9 +16,17 @@ namespace SimpleParser
     public static class ParserHelper
     {
 
-        public static SymbolTable saved;
-        public static SymbolTable top;
+        public static SymbolTable saved = null;
+        public static SymbolTable top = null;
 
+        static ParserHelper()
+        {
+            top = new SymbolTable(null);
+            TypeSymbol intSym = new TypeSymbol();
+            intSym.Value = Symbol.ValueType.INT;
+            top.Put("int", intSym);
+        }
+        
         public static void upCast(VarSymbol value, Symbol.ValueType type)
         {
             switch (value.Type)

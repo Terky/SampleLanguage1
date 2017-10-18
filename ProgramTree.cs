@@ -22,12 +22,6 @@ namespace ProgramTree
     {
         public IdNode(string name) {
             Name = name;
-            VarSymbol s = ParserHelper.top.Get(Name) as VarSymbol;
-            if (s == null)
-            {
-                //error
-            }
-            Value = s;
         }
 
         public string Name { get; set; }
@@ -36,6 +30,12 @@ namespace ProgramTree
 
         public override VarSymbol Eval()
         {
+            VarSymbol s = ParserHelper.top.Get(Name) as VarSymbol;
+            if (s == null)
+            {
+                //error
+            }
+            Value = s;
             return Value;
         }
     }
@@ -208,7 +208,6 @@ namespace ProgramTree
             {
                 //error
             }
-            System.Console.WriteLine("Cycle {0}", val.Value.iValue);
             for (int i = 0; i < val.Value.iValue; ++i)
             {
                 Stat.Exec();
@@ -258,7 +257,7 @@ namespace ProgramTree
         public override void Exec()
         {
             VarSymbol s = new VarSymbol();
-            TypeSymbol t = (ParserHelper.top.Get(Type)) as SimpleLang.TypeSymbol;
+            TypeSymbol t = (ParserHelper.top.Get(Type)) as TypeSymbol;
             s.Type = t.Value;
             ParserHelper.top.Put(Name, s);
         }

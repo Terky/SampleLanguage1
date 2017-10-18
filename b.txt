@@ -1,0 +1,4 @@
+begin
+  var b: int;
+  b := 5
+end
