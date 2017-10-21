@@ -9,7 +9,8 @@ Digit   [0-9]
 AlphaDigit {Alpha}|{Digit}
 INTNUM  -?{Digit}+
 REALNUM {INTNUM}\.{INTNUM}
-ID {Alpha}{AlphaDigit}* 
+BOOLVAL "true"|"false"
+ID {Alpha}{AlphaDigit}*
 
 %%
 
@@ -20,7 +21,12 @@ ID {Alpha}{AlphaDigit}*
 
 {REALNUM} { 
   yylval.dVal = double.Parse(yytext); 
-  return (int)Tokens.RNUM;
+  return (int)Tokens.DNUM;
+}
+
+{BOOLVAL} {
+	yylval.bVal = bool.Parse(yytext);
+	return (int)Tokens.BVAL;
 }
 
 {ID}  { 

@@ -7,6 +7,7 @@
 %output = SimpleYacc.cs
 
 %union { 
+			public bool bVal;
 			public double dVal; 
 			public int iVal; 
 			public string sVal; 
@@ -22,7 +23,8 @@
 
 %token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT VAR COLON
 %token <iVal> INUM 
-%token <dVal> RNUM 
+%token <dVal> DNUM 
+%token <bVal> BVAL
 %token <sVal> ID
 
 %type <eVal> expr ident term factor
@@ -73,6 +75,8 @@ term    : term MULT factor { $$ = new BinExprNode($1, $3, OpType.Mult); }
 factor  : LEFT_BRACKET expr RIGHT_BRACKET { $$ = $2; }
 		| ident  { $$ = $1 as IdNode; }
 		| INUM { $$ = new IntNumNode($1); }
+		| DNUM { $$ = new DoubleNumNode($1); }
+		| BVAL { $$ = new BoolNode($1); }
 		;
 
 block	: BEGIN	stlist END { $$ = $2; }
@@ -80,6 +84,6 @@ block	: BEGIN	stlist END { $$ = $2; }
 
 cycle	: CYCLE expr statement { $$ = new CycleNode($2, $3); }
 		;
-	
+
 %%
 

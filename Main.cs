@@ -10,7 +10,7 @@ namespace SimpleCompiler
     {
         public static void Main()
         {
-            string FileName = @"..\..\a.txt";
+            string FileName = @"..\..\b.txt";
             try
             {
                 string Text = File.ReadAllText(FileName);
@@ -42,6 +42,10 @@ namespace SimpleCompiler
             catch (SyntaxException e)
             {
                 Console.WriteLine("Syntax error. " + e.Message); //Синтаксическая ошибка
+            }
+            catch (SemanticExepction e)
+            {
+                Console.WriteLine("Semantic error. " + e.Message);
             }
 
             Console.ReadLine();

@@ -9,4 +9,5 @@ namespace SimpleLang
     {
         public ValueType Value { get; set; }
     }
+
 }

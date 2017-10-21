@@ -26,7 +26,7 @@ namespace SimpleLang
                 bool suc = st.table.TryGetValue(key, out found);
                 if (!suc && st.prev == null)
                 {
-                    System.Console.WriteLine("SYMBOL {0} NOT FOUND", key);
+                    throw new SimpleParser.SemanticExepction("Variable not in scope: " + key);
 
                 }
                 if (found!=null)

@@ -11,6 +11,10 @@ namespace SimpleParser
     {
         public SyntaxException(string msg) : base(msg) { }
     }
+    public class SemanticExepction : Exception
+    {
+        public SemanticExepction(string msg) : base(msg) { }
+    }
     // Класс глобальных описаний и статических методов
     // для использования различными подсистемами парсера и сканера
     public static class ParserHelper
@@ -25,6 +29,12 @@ namespace SimpleParser
             TypeSymbol intSym = new TypeSymbol();
             intSym.Value = Symbol.ValueType.INT;
             top.Put("int", intSym);
+            TypeSymbol doubleSym = new TypeSymbol();
+            doubleSym.Value = Symbol.ValueType.DOUBLE;
+            top.Put("double", doubleSym);
+            TypeSymbol boolSym = new TypeSymbol();
+            boolSym.Value = Symbol.ValueType.BOOL;
+            top.Put("bool", boolSym);
         }
         
         public static void upCast(VarSymbol value, Symbol.ValueType type)

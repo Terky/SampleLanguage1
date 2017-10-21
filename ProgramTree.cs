@@ -160,6 +160,19 @@ namespace ProgramTree
         }
     }
 
+    public class BoolNode : ExprNode
+    {
+        public BoolNode(bool val) { Val = val; }
+        public bool Val { get; set;}
+        public override VarSymbol Eval()
+        {
+            VarSymbol value = new VarSymbol();
+            value.Type = Symbol.ValueType.BOOL;
+            value.Value.bValue = Val;
+            return value;
+        }
+    }
+
     public abstract class StatementNode : Node // базовый класс для всех операторов
     {
         public abstract void Exec();
@@ -180,8 +193,8 @@ namespace ProgramTree
         {
             VarSymbol s = ParserHelper.top.Get(Id.Name) as VarSymbol;
             if (s == null)
-            {
-                //error
+            { // Возможно недостижимый код
+                throw new SemanticExepction("How do you get here?");
             }
             VarSymbol exprVal = Expr.Eval();
             if (s.Type != exprVal.Type)
@@ -189,6 +202,7 @@ namespace ProgramTree
                 //error - несовместимые типы. Нужно сделать совместимыми не только равные типы
             }
 			s.Value = exprVal.Value;
+            //Console.WriteLine("{0} := int: {1}, double: {2}, bool: {3}", Id.Name, s.Value.iValue, s.Value.dValue, s.Value.bValue);
         }
     }
 

@@ -1,4 +1,12 @@
 begin
   var b: int;
-  b := 5
+  b := 5;
+  begin
+    var b: bool;
+    b := true;
+    var c: double;
+    c := 0.3
+  end;
+  b := 9;
+  c := 9.3
 end
