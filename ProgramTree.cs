@@ -13,12 +13,6 @@ namespace ProgramTree
     {
     }
 
-    public class ProgrammNode : Node
-    {
-        FunListNode Functions { get; set; }
-        BlockNode Programm { get; set; }
-    }
-
     public class FunListNode : Node
     {
         public List<FunNode> FunList = new List<FunNode>();
@@ -36,6 +30,17 @@ namespace ProgramTree
 
     public class FunNode : ExprNode
     {
+        //
+        public FunNode(string name, string type, BlockNode body)
+        {
+            Name = name;
+            Type = type;
+            Body = body;
+        }
+        public Symbol.ValueType Type { get; set; }
+
+        public string Name { get; set; }
+
         public BlockNode Body { get; set; }
 
         public override VarSymbol Eval()

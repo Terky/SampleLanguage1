@@ -33,14 +33,14 @@
 
 %%
 
-progr    : fun_list function { root = $2; }
+progr    : fun_list { root = $1; }
 		 ;
 
-fun_list : fun_list function { }
-		 |
+fun_list : function { $$ = new FunListNode($1); }
+		 | fun_list function { $1.Add($2); $$ = $1; }
 		 ;
 
-function : header block {  }
+function : header block { $$ = new FunNode() }
 		 ;
 
 header   : ID ID LEFT_BRACKET arguments RIGHT_BRACKET {  }
@@ -57,6 +57,7 @@ stlist	 : statement
 			}
 		 | stlist SEMICOLON statement 
 			{ 
+			//???????? ?? ?????? statement
 				if ($3 != null)
 				{
 					$1.Add($3);
