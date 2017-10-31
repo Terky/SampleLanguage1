@@ -10,9 +10,10 @@ namespace SimpleCompiler
     {
         public static void Main()
         {
-            string FileName = @"..\..\b.txt";
+            string FileName = @"..\..\c.txt";
             try
             {
+                double val = double.Parse("0,3");
                 string Text = File.ReadAllText(FileName);
 
                 Scanner scanner = new Scanner();
@@ -29,7 +30,7 @@ namespace SimpleCompiler
                     //foreach (var st in parser.root.StList)
                     //Console.WriteLine(st);
                 }
-                parser.root.Exec();
+                parser.root.Eval();
             }
             catch (FileNotFoundException)
             {
