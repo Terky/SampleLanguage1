@@ -9,15 +9,29 @@ namespace ProgramTree
 
     public enum OpType { Plus, Minus, Div, Mult };
 
+    public class FunHeader
+    {
+        public Symbol.ValueType Type { get; set; }
+
+        public string Name { get; set; }
+
+        public FunHeader(string type, string name)
+        {
+            Name = name;
+            Type = (ParserHelper.topTable.Get(type) as TypeSymbol).Value;
+        }
+
+    }
+
     public class Node // базовый класс для всех узлов    
     {
     }
 
-    public class FunListNode : Node
+    public class MainProgramNode : ExprNode
     {
         public List<FunNode> FunList = new List<FunNode>();
 
-        public FunListNode(FunNode fun)
+        public MainProgramNode(FunNode fun)
         {
             Add(fun);
         }
@@ -26,27 +40,34 @@ namespace ProgramTree
         {
             FunList.Add(fun);
         }
+
+        public override VarSymbol Eval()
+        {
+            return FunList[FunList.Count - 1].Eval();
+        }
     }
 
     public class FunNode : ExprNode
     {
-        //
-        public FunNode(string name, string type, BlockNode body)
-        {
-            Name = name;
-            Type = type;
-            Body = body;
-        }
-        public Symbol.ValueType Type { get; set; }
-
-        public string Name { get; set; }
+        public FunHeader Header { get; set; }
 
         public BlockNode Body { get; set; }
+
+        public FunNode(FunHeader header, BlockNode body)
+        {
+            Header = header;
+            Body = body;
+        }
 
         public override VarSymbol Eval()
         {
             Body.Exec();
-            
+            VarSymbol result = ParserHelper.topTable.Get(ParserHelper.RESULT) as VarSymbol;
+            if (result.Type != Header.Type)
+            {
+                throw new SemanticExepction("Несоответствие типов кароч");
+            }
+            return result;
         }
     }
 
@@ -67,7 +88,7 @@ namespace ProgramTree
 
         public override VarSymbol Eval()
         {
-            VarSymbol s = ParserHelper.top.Get(Name) as VarSymbol;
+            VarSymbol s = ParserHelper.topTable.Get(Name) as VarSymbol;
             if (s == null)
             {
                 //error
@@ -228,7 +249,7 @@ namespace ProgramTree
         }
         public override void Exec()
         {
-            VarSymbol s = ParserHelper.top.Get(Id.Name) as VarSymbol;
+            VarSymbol s = ParserHelper.topTable.Get(Id.Name) as VarSymbol;
             if (s == null)
             { // Возможно недостижимый код
                 throw new SemanticExepction("How do you get here?");
@@ -268,10 +289,19 @@ namespace ProgramTree
 
     public class BlockNode : StatementNode
     {
+        public enum FinalState
+        {
+            RETURN,
+            COMPLETE
+        }
+
+        public FinalState FState { get; set; }
+
         public List<StatementNode> StList = new List<StatementNode>();
 
         public BlockNode(StatementNode stat)
         {
+            FState = FinalState.COMPLETE;
             Add(stat);
         }
 
@@ -282,13 +312,24 @@ namespace ProgramTree
 
         public override void Exec()
         {
-            ParserHelper.saved = ParserHelper.top;
-            ParserHelper.top = new SymbolTable(ParserHelper.top);
+            ParserHelper.savedTable = ParserHelper.topTable;
+            ParserHelper.topTable = new SymbolTable(ParserHelper.topTable);
             foreach (StatementNode stNode in StList)
             {
                 stNode.Exec();
+                if (stNode is ReturnNode)
+                {
+                    FState = FinalState.RETURN;
+                    break;
+                }
+                if ( stNode is BlockNode &&
+                    (stNode as BlockNode).FState == FinalState.RETURN)
+                {
+                    FState = FinalState.RETURN;
+                    break;
+                }
             }
-            ParserHelper.top = ParserHelper.saved;
+            ParserHelper.topTable = ParserHelper.savedTable;
         }
 
     }
@@ -313,9 +354,35 @@ namespace ProgramTree
         public override void Exec()
         {
             VarSymbol s = new VarSymbol();
-            TypeSymbol t = (ParserHelper.top.Get(Type)) as TypeSymbol;
+            TypeSymbol t = (ParserHelper.topTable.Get(Type)) as TypeSymbol;
             s.Type = t.Value;
-            ParserHelper.top.Put(Name, s);
+            ParserHelper.topTable.Put(Name, s);
+        }
+    }
+
+    public class ReturnNode : StatementNode
+    {
+        public ExprNode Expr { get; set; }
+
+        public ReturnNode(ExprNode expr)
+        {
+            Expr = expr;
+        }
+
+        //Для void
+        public ReturnNode() { }
+
+        public override void Exec()
+        {
+            VarSymbol value;
+            if (Expr != null) {
+                value = Expr.Eval();
+            } else
+            {
+                value = new VarSymbol();
+                value.Type = Symbol.ValueType.VOID;
+            }
+            ParserHelper.globalTable.Put(ParserHelper.RESULT, value);
         }
     }
 }

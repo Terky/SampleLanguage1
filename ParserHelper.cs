@@ -20,24 +20,27 @@ namespace SimpleParser
     public static class ParserHelper
     {
 
-        public static SymbolTable saved = null;
-        public static SymbolTable top = null;
+        public const string RESULT = "@result";
+        public static SymbolTable savedTable = null;
+        public static SymbolTable topTable = null;
+        public static SymbolTable globalTable = null;
 
         static ParserHelper()
         {
-            top = new SymbolTable(null);
+            topTable = new SymbolTable(null);
             TypeSymbol intSym = new TypeSymbol();
             intSym.Value = Symbol.ValueType.INT;
-            top.Put("int", intSym);
+            topTable.Put("int", intSym);
             TypeSymbol doubleSym = new TypeSymbol();
             doubleSym.Value = Symbol.ValueType.DOUBLE;
-            top.Put("double", doubleSym);
+            topTable.Put("double", doubleSym);
             TypeSymbol boolSym = new TypeSymbol();
             boolSym.Value = Symbol.ValueType.BOOL;
-            top.Put("bool", boolSym);
+            topTable.Put("bool", boolSym);
             TypeSymbol voidSym = new TypeSymbol();
             voidSym.Value = Symbol.ValueType.VOID;
-            top.Put("void", voidSym);
+            topTable.Put("void", voidSym);
+            globalTable = topTable;
         }
         
         public static void upCast(VarSymbol value, Symbol.ValueType type)
