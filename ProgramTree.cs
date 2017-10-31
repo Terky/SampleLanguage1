@@ -302,7 +302,10 @@ namespace ProgramTree
         public BlockNode(StatementNode stat)
         {
             FState = FinalState.COMPLETE;
-            Add(stat);
+            if (stat != null)
+            {
+                Add(stat);
+            }
         }
 
         public void Add(StatementNode stat)

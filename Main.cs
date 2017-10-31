@@ -13,7 +13,6 @@ namespace SimpleCompiler
             string FileName = @"..\..\c.txt";
             try
             {
-                double val = double.Parse("0,3");
                 string Text = File.ReadAllText(FileName);
 
                 Scanner scanner = new Scanner();

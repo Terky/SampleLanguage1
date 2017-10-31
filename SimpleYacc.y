@@ -59,11 +59,10 @@ stlist	 : statement
 			}
 		 | stlist SEMICOLON statement 
 			{ 
-			//???????? ?? ?????? statement
 				if ($3 != null)
 				{
 					$1.Add($3);
-				}
+			    }
 				$$ = $1; 
 			}
 		 ;

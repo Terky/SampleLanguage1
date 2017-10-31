@@ -4,7 +4,7 @@
 
 // GPPG version 1.3.6
 // Machine:  DESKTOP-32TFS7K
-// DateTime: 31.10.2017 21:51:22
+// DateTime: 31.10.2017 22:47:58
 // UserName: wowit
 // Input file <SimpleYacc.y>
 
@@ -193,11 +193,10 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
         break;
       case 11: // stlist -> stlist, SEMICOLON, statement
 { 
-			//???????? ?? ?????? statement
 				if (ValueStack[ValueStack.Depth-1].stVal != null)
 				{
 					ValueStack[ValueStack.Depth-3].blVal.Add(ValueStack[ValueStack.Depth-1].stVal);
-				}
+			    }
 				CurrentSemanticValue.blVal = ValueStack[ValueStack.Depth-3].blVal; 
 			}
         break;
