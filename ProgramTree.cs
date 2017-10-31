@@ -57,6 +57,8 @@ namespace ProgramTree
         {
             Header = header;
             Body = body;
+            FunSymbol funSymbol = new FunSymbol(header.Type, this);
+            ParserHelper.topTable.Put(Header.Name, funSymbol);
         }
 
         public override VarSymbol Eval()
@@ -337,6 +339,27 @@ namespace ProgramTree
 
     }
 
+    public class FunCallNode : ExprNode
+    {
+        public FunCallNode(string name)
+        {
+            Name = name;
+        }
+
+        public string Name { get; set; }
+
+        public override VarSymbol Eval()
+        {
+            FunSymbol fun = ParserHelper.topTable.Get(Name) as FunSymbol;
+            if (fun == null)
+            {
+                //error
+            }
+            VarSymbol Value = fun.Address.Eval();
+            return Value;
+        }
+    }
+
     public class DeclNode : StatementNode
     {
 
@@ -385,7 +408,9 @@ namespace ProgramTree
                 value = new VarSymbol();
                 value.Type = Symbol.ValueType.VOID;
             }
-            ParserHelper.globalTable.Put(ParserHelper.RESULT, value);
+            VarSymbol result = ParserHelper.globalTable.Get(ParserHelper.RESULT) as VarSymbol;
+            result.Type = value.Type;
+            result.Value = value.Value;
         }
     }
 }

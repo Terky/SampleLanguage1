@@ -41,6 +41,7 @@ namespace SimpleParser
             voidSym.Value = Symbol.ValueType.VOID;
             topTable.Put("void", voidSym);
             globalTable = topTable;
+            globalTable.Put(RESULT, new VarSymbol());
         }
         
         public static void upCast(VarSymbol value, Symbol.ValueType type)

@@ -21,6 +21,12 @@ namespace SimpleLang
             Value = new VarValue();
         }
 
+        public VarSymbol(ValueType type, VarValue value)
+        {
+            Type = type;
+            Value = value;
+        }
+
         public ValueType Type { get; set; }
 
         public VarValue Value { get; set; }

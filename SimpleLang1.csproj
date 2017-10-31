@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FunSymbol.cs" />
     <Compile Include="Symbol.cs" />
     <Compile Include="SymbolTable.cs" />
     <Compile Include="Main.cs" />

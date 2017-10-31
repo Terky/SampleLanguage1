@@ -28,7 +28,7 @@
 %token <bVal> BVAL
 %token <sVal> ID
 
-%type <eVal> expr ident term factor function fun_list
+%type <eVal> expr ident term factor function fun_list fun_call
 %type <stVal> assign statement cycle decl return 
 %type <blVal> stlist block
 %type <fHead> fun_header
@@ -79,6 +79,10 @@ statement: assign { $$ = $1; }
 decl	: ID ID { $$ = new DeclNode($1, $2); }
 		;
 
+//TODO: добавить функции с аргументами
+fun_call: ID arguments { $$ = new FunCallNode($1); }
+		;
+
 ident 	: ID { $$ = new IdNode($1); }	
 		;
 	
@@ -97,6 +101,7 @@ term    : term MULT factor { $$ = new BinExprNode($1, $3, OpType.Mult); }
 
 factor  : LEFT_BRACKET expr RIGHT_BRACKET { $$ = $2; }
 		| ident  { $$ = $1 as IdNode; }
+		| fun_call { $$ = $1 as FunCallNode; }
 		| INUM { $$ = new IntNumNode($1); }
 		| DNUM { $$ = new DoubleNumNode($1); }
 		| BVAL { $$ = new BoolNode($1); }
