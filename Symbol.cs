@@ -12,6 +12,7 @@ namespace SimpleLang
             INT,
             DOUBLE,
             BOOL,
+            VOID,
             UNKNOWN
         };
         

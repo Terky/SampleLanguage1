@@ -21,7 +21,7 @@
 
 %namespace SimpleParser
 
-%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT VAR COLON
+%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT VAR COLON COMMA
 %token <iVal> INUM 
 %token <dVal> DNUM 
 %token <bVal> BVAL
@@ -33,24 +33,43 @@
 
 %%
 
-progr   : block { root = $1; }
-		;
+progr    : fun_list function { root = $2; }
+		 ;
 
-stlist	: statement 
+fun_list : fun_list function { }
+		 |
+		 ;
+
+function : header block {  }
+		 ;
+
+header   : ID ID LEFT_BRACKET arguments RIGHT_BRACKET {  }
+		 ;
+
+arguments: arguments COMMA ID ID
+		 | ID ID
+		 |
+		 ;
+
+stlist	 : statement 
 			{ 
 				$$ = new BlockNode($1); 
 			}
-		| stlist SEMICOLON statement 
+		 | stlist SEMICOLON statement 
 			{ 
-				$1.Add($3); 
+				if ($3 != null)
+				{
+					$1.Add($3);
+				}
 				$$ = $1; 
 			}
-		;
+		 ;
 
 statement: assign { $$ = $1; }
 		| decl	  { $$ = $1; }
 		| block   { $$ = $1; }
 		| cycle   { $$ = $1; }
+		| { $$ = null; }
 	;
 
 decl	: VAR ID COLON ID { $$ = new DeclNode($2, $4); }

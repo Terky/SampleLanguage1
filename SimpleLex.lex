@@ -45,6 +45,7 @@ ID {Alpha}{AlphaDigit}*
 "*" { return (int)Tokens.MULT; }
 "/" { return (int)Tokens.DIV; }
 ":" { return (int)Tokens.COLON; }
+"," { return (int)Tokens.COMMA; }
 
 [^ \r\n] {
 	LexError();

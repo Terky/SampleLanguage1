@@ -13,6 +13,38 @@ namespace ProgramTree
     {
     }
 
+    public class ProgrammNode : Node
+    {
+        FunListNode Functions { get; set; }
+        BlockNode Programm { get; set; }
+    }
+
+    public class FunListNode : Node
+    {
+        public List<FunNode> FunList = new List<FunNode>();
+
+        public FunListNode(FunNode fun)
+        {
+            Add(fun);
+        }
+
+        public void Add(FunNode fun)
+        {
+            FunList.Add(fun);
+        }
+    }
+
+    public class FunNode : ExprNode
+    {
+        public BlockNode Body { get; set; }
+
+        public override VarSymbol Eval()
+        {
+            Body.Exec();
+            
+        }
+    }
+
     public abstract class ExprNode : Node // базовый класс для всех выражений
     {
         public abstract VarSymbol Eval();
@@ -202,7 +234,7 @@ namespace ProgramTree
                 //error - несовместимые типы. Нужно сделать совместимыми не только равные типы
             }
 			s.Value = exprVal.Value;
-            //Console.WriteLine("{0} := int: {1}, double: {2}, bool: {3}", Id.Name, s.Value.iValue, s.Value.dValue, s.Value.bValue);
+            Console.WriteLine("{0} := int: {1}, double: {2}, bool: {3}", Id.Name, s.Value.iValue, s.Value.dValue, s.Value.bValue);
         }
     }
 
@@ -247,7 +279,8 @@ namespace ProgramTree
         {
             ParserHelper.saved = ParserHelper.top;
             ParserHelper.top = new SymbolTable(ParserHelper.top);
-            foreach (StatementNode stNode in StList) {
+            foreach (StatementNode stNode in StList)
+            {
                 stNode.Exec();
             }
             ParserHelper.top = ParserHelper.saved;
@@ -264,6 +297,10 @@ namespace ProgramTree
 
         public DeclNode(string name, string type)
         {
+            if (type == "void")
+            {
+                throw new SemanticExepction("\'void\' cannot be used in this context.");
+            }
             Name = name;
             Type = type;
         }

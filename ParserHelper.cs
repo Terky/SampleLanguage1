@@ -35,6 +35,9 @@ namespace SimpleParser
             TypeSymbol boolSym = new TypeSymbol();
             boolSym.Value = Symbol.ValueType.BOOL;
             top.Put("bool", boolSym);
+            TypeSymbol voidSym = new TypeSymbol();
+            voidSym.Value = Symbol.ValueType.VOID;
+            top.Put("void", voidSym);
         }
         
         public static void upCast(VarSymbol value, Symbol.ValueType type)

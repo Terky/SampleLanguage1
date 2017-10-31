@@ -1,12 +1,13 @@
 begin
   var b: int;
-  b := 5;
-  begin
+  b := 5;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;       ;;;;;;;;
+  begin;;;;;
     var b: bool;
     b := true;
     var c: double;
-    c := 0.3
+    c := 0.3;
   end;
-  b := 9;
-  c := 9.3
+  var t: void;;;;;;;;
+  b := 9 + true;
 end
