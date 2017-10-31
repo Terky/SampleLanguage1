@@ -344,7 +344,7 @@ namespace ProgramTree
 
         public string Type { set; get; }
 
-        public DeclNode(string name, string type)
+        public DeclNode(string type, string name)
         {
             if (type == "void")
             {

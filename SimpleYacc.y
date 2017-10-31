@@ -45,14 +45,15 @@ fun_list : function { $$ = new MainProgramNode($1 as FunNode); }
 function : fun_header block { $$ = new FunNode($1, $2); }
 		 ;
 
-fun_header   : ID ID LEFT_BRACKET arguments RIGHT_BRACKET { $$ = new FunHeader($1, $2); }
+fun_header   : ID ID arguments { $$ = new FunHeader($1, $2); }
 		 ;
 
-arguments: arguments COMMA ID ID
-		 | ID ID
-		 |
+arguments: LEFT_BRACKET arguments COMMA ID ID RIGHT_BRACKET
+		 | LEFT_BRACKET ID ID RIGHT_BRACKET
+		 | LEFT_BRACKET RIGHT_BRACKET
 		 ;
 
+//TODO: сделать необязательной точку с запятой после окончания блока (после '}' )
 stlist	 : statement 
 			{ 
 				$$ = new BlockNode($1); 
@@ -75,7 +76,7 @@ statement: assign { $$ = $1; }
 		| { $$ = null; }
 	;
 
-decl	: VAR ID COLON ID { $$ = new DeclNode($2, $4); }
+decl	: ID ID { $$ = new DeclNode($1, $2); }
 		;
 
 ident 	: ID { $$ = new IdNode($1); }	
