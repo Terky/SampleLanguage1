@@ -7,6 +7,11 @@ namespace SimpleLang
 {
     public class TypeSymbol: Symbol
     {
+        public TypeSymbol(ValueType value)
+        {
+            Value = value;
+        }
+
         public ValueType Value { get; set; }
     }
 

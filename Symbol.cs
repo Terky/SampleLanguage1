@@ -16,7 +16,7 @@ namespace SimpleLang
             UNKNOWN
         };
         
-        
+       
 
         //public SymbolType? ParseType(String str)
         //{

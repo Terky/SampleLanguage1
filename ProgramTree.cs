@@ -18,7 +18,7 @@ namespace ProgramTree
         public FunHeader(string type, string name)
         {
             Name = name;
-            Type = (ParserHelper.topTable.Get(type) as TypeSymbol).Value;
+            Type = (ParserHelper.GlobalTable.Get(type) as TypeSymbol).Value;
         }
 
     }
@@ -58,17 +58,20 @@ namespace ProgramTree
             Header = header;
             Body = body;
             FunSymbol funSymbol = new FunSymbol(header.Type, this);
-            ParserHelper.topTable.Put(Header.Name, funSymbol);
+            ParserHelper.GlobalTable.Put(Header.Name, funSymbol);
         }
 
         public override VarSymbol Eval()
         {
+            ParserHelper.Stack.Push(new SymbolsRecord());
             Body.Exec();
-            VarSymbol result = ParserHelper.topTable.Get(ParserHelper.RESULT) as VarSymbol;
+            VarSymbol result = ParserHelper.BottomTable().Get(SymbolTable.RESULT) as VarSymbol;
             if (result.Type != Header.Type)
             {
                 throw new SemanticExepction("Несоответствие типов кароч");
             }
+            //может быть ошибка
+            ParserHelper.Stack.Pop();
             return result;
         }
     }
@@ -90,7 +93,7 @@ namespace ProgramTree
 
         public override VarSymbol Eval()
         {
-            VarSymbol s = ParserHelper.topTable.Get(Name) as VarSymbol;
+            VarSymbol s = ParserHelper.TopTable().Get(Name) as VarSymbol;
             if (s == null)
             {
                 //error
@@ -251,7 +254,7 @@ namespace ProgramTree
         }
         public override void Exec()
         {
-            VarSymbol s = ParserHelper.topTable.Get(Id.Name) as VarSymbol;
+            VarSymbol s = ParserHelper.TopTable().Get(Id.Name) as VarSymbol;
             if (s == null)
             { // Возможно недостижимый код
                 throw new SemanticExepction("How do you get here?");
@@ -317,8 +320,8 @@ namespace ProgramTree
 
         public override void Exec()
         {
-            ParserHelper.savedTable = ParserHelper.topTable;
-            ParserHelper.topTable = new SymbolTable(ParserHelper.topTable);
+            ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
+            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
             foreach (StatementNode stNode in StList)
             {
                 stNode.Exec();
@@ -334,7 +337,7 @@ namespace ProgramTree
                     break;
                 }
             }
-            ParserHelper.topTable = ParserHelper.savedTable;
+            ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
         }
 
     }
@@ -350,7 +353,7 @@ namespace ProgramTree
 
         public override VarSymbol Eval()
         {
-            FunSymbol fun = ParserHelper.topTable.Get(Name) as FunSymbol;
+            FunSymbol fun = ParserHelper.GlobalTable.Get(Name) as FunSymbol;
             if (fun == null)
             {
                 //error
@@ -380,9 +383,9 @@ namespace ProgramTree
         public override void Exec()
         {
             VarSymbol s = new VarSymbol();
-            TypeSymbol t = (ParserHelper.topTable.Get(Type)) as TypeSymbol;
+            TypeSymbol t = (ParserHelper.GlobalTable.Get(Type)) as TypeSymbol;
             s.Type = t.Value;
-            ParserHelper.topTable.Put(Name, s);
+            ParserHelper.TopTable().Put(Name, s);
         }
     }
 
@@ -408,7 +411,7 @@ namespace ProgramTree
                 value = new VarSymbol();
                 value.Type = Symbol.ValueType.VOID;
             }
-            VarSymbol result = ParserHelper.globalTable.Get(ParserHelper.RESULT) as VarSymbol;
+            VarSymbol result = ParserHelper.BottomTable().Get(SymbolTable.RESULT) as VarSymbol;
             result.Type = value.Type;
             result.Value = value.Value;
         }

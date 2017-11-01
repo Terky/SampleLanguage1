@@ -4,7 +4,7 @@
 
 // GPPG version 1.3.6
 // Machine:  DESKTOP-32TFS7K
-// DateTime: 31.10.2017 23:40:52
+// DateTime: 02.11.2017 0:07:03
 // UserName: wowit
 // Input file <SimpleYacc.y>
 

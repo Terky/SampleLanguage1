@@ -4,6 +4,8 @@ namespace SimpleLang
 {
     public class SymbolTable
     {
+        public const string RESULT = "@result";
+
         private Dictionary<string, Symbol> table;
         protected SymbolTable prev;
                 
