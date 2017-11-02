@@ -7,7 +7,7 @@ namespace ProgramTree
 {
     public enum AssignType { Assign, AssignPlus, AssignMinus, AssignMult, AssignDivide };
 
-    public enum OpType { Plus, Minus, Div, Mult };
+    public enum OpType { Plus, Minus, Div, Mult, Or, And, Not, Lt, Gt, Let, Get, Eq, Neq };
 
     public class FunHeader
     {
@@ -132,11 +132,14 @@ namespace ProgramTree
                     ParserHelper.upCast(rightValue, Symbol.ValueType.DOUBLE);
                 } else
                 {
-                    //error
+                    throw new SemanticExepction("Несоответствие типов, оператор " + Op.ToString());
                 }
             }
 
             VarSymbol res = new VarSymbol();
+            //-----------------------------------------
+            //TODO: Сделать по-человечески (пожалуйста)
+            //-----------------------------------------
             switch (Op)
             {
                 case OpType.Plus:
@@ -150,6 +153,8 @@ namespace ProgramTree
                             res.Type = Symbol.ValueType.INT;
                             res.Value.iValue = leftValue.Value.iValue + rightValue.Value.iValue;
                             break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
                     }
                     break;
                 case OpType.Minus:
@@ -163,6 +168,8 @@ namespace ProgramTree
                             res.Type = Symbol.ValueType.INT;
                             res.Value.iValue = leftValue.Value.iValue - rightValue.Value.iValue;
                             break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
                     }
                     break;
                 case OpType.Mult:
@@ -176,6 +183,8 @@ namespace ProgramTree
                             res.Type = Symbol.ValueType.INT;
                             res.Value.iValue = leftValue.Value.iValue * rightValue.Value.iValue;
                             break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
                     }
                     break;
                 case OpType.Div:
@@ -189,12 +198,157 @@ namespace ProgramTree
                             res.Type = Symbol.ValueType.INT;
                             res.Value.iValue = leftValue.Value.iValue / rightValue.Value.iValue;
                             break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
+                    }
+                    break;
+                case OpType.And:
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.BOOL:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.bValue && rightValue.Value.bValue;
+                            break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
+                    }
+                    break;
+                case OpType.Or:
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.BOOL:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.bValue || rightValue.Value.bValue;
+                            break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
+                    }
+                    break;
+                case OpType.Gt:
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.INT:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.iValue > rightValue.Value.iValue;
+                            break;
+                        case Symbol.ValueType.DOUBLE:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.dValue > rightValue.Value.dValue;
+                            break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
+                    }
+                    break;
+                case OpType.Lt:
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.INT:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.iValue < rightValue.Value.iValue;
+                            break;
+                        case Symbol.ValueType.DOUBLE:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.dValue < rightValue.Value.dValue;
+                            break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
+                    }
+                    break;
+                case OpType.Get:
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.INT:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.iValue >= rightValue.Value.iValue;
+                            break;
+                        case Symbol.ValueType.DOUBLE:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.dValue >= rightValue.Value.dValue;
+                            break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
+                    }
+                    break;
+                case OpType.Let:
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.INT:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.iValue <= rightValue.Value.iValue;
+                            break;
+                        case Symbol.ValueType.DOUBLE:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.dValue <= rightValue.Value.dValue;
+                            break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
+                    }
+                    break;
+                case OpType.Eq:
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.INT:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.iValue == rightValue.Value.iValue;
+                            break;
+                        case Symbol.ValueType.DOUBLE:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.dValue == rightValue.Value.dValue;
+                            break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
+                    }
+                    break;
+                case OpType.Neq:
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.INT:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.iValue != rightValue.Value.iValue;
+                            break;
+                        case Symbol.ValueType.DOUBLE:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.dValue != rightValue.Value.dValue;
+                            break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
                     }
                     break;
             }
             return res;
         }
 
+    }
+
+    public class UnExprNode : ExprNode
+    {
+        ExprNode Expr { get; set; }
+
+        OpType Op { get; set; }
+
+        public UnExprNode(ExprNode expr, OpType op)
+        {
+            Expr = expr;
+            Op = op;
+        }
+
+        public override VarSymbol Eval()
+        {
+            switch (Op)
+            {
+                case OpType.Not:
+                    VarSymbol res = Expr.Eval();
+                    if (res.Type != Symbol.ValueType.BOOL)
+                    {
+                        throw new SemanticExepction("Несоответствие типов, оператор '!'");
+                    }
+                    VarSymbol.VarValue value = new VarSymbol.VarValue();
+                    value.bValue = !res.Value.bValue;
+                    return new VarSymbol(Symbol.ValueType.BOOL, value);
+                default:
+                    throw new SemanticExepction("Недопустимый унарный оператор");
+            }
+        }
     }
 
     public class IntNumNode : ExprNode

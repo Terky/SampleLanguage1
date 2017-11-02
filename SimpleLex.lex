@@ -48,6 +48,15 @@ ID {Alpha}{AlphaDigit}*
 "," { return (int)Tokens.COMMA; }
 "{" { return (int)Tokens.BEGIN; }
 "}" { return (int)Tokens.END; }
+">" { return (int)Tokens.GT; }
+"<" { return (int)Tokens.LT; }
+">=" { return (int)Tokens.GET; }
+"<=" { return (int)Tokens.LET; }
+"!=" { return (int)Tokens.NEQ; }
+"==" { return (int)Tokens.EQ; }
+"&&" { return (int)Tokens.AND; }
+"||" { return (int)Tokens.OR; }
+"!" { return (int)Tokens.NOT; }
 
 [^ \r\n] {
 	LexError();

@@ -4,7 +4,7 @@
 // ==========================================================================
 //  Version:  1.3.6
 //  Machine:  DESKTOP-32TFS7K
-//  DateTime: 31.10.2017 21:42:00
+//  DateTime: 03.11.2017 0:14:53
 //  UserName: wowit
 // ==========================================================================
 
@@ -26,53 +26,55 @@
 			public ExprNode eVal;
 			public StatementNode stVal;
 			public BlockNode blVal;
+			public FunHeader fHead;
        }
 
 %using ProgramTree;
 
 %namespace SimpleParser
 
-%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT VAR COLON COMMA RETURN
+%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT VAR COLON COMMA RETURN GT LT EQ NEQ GET LET AND OR NOT
 %token <iVal> INUM 
 %token <dVal> DNUM 
 %token <bVal> BVAL
 %token <sVal> ID
 
-%type <eVal> expr ident term factor function
-%type <stVal> assign statement cycle decl return
+%type <eVal> expr ident term factor function fun_list fun_call b_expr b_term b_factor not_factor relation
+%type <stVal> assign statement cycle decl return 
 %type <blVal> stlist block
+%type <fHead> fun_header
 
 %%
 
-progr    : fun_list { root = $1; }
+progr    : fun_list { root = $1 as MainProgramNode; }
 		 ;
 
-fun_list : function { $$ = new MainProgramNode($1); }
-		 | fun_list function { $1.Add($2); $$ = $1; }
+fun_list : function { $$ = new MainProgramNode($1 as FunNode); }
+		 | fun_list function { ($1 as MainProgramNode).Add($2 as FunNode); $$ = $1; }
 		 ;
 
-function : fun_header block { $$ = new FunNode($1); }
+function : fun_header block { $$ = new FunNode($1, $2); }
 		 ;
 
-fun_header   : ID ID LEFT_BRACKET arguments RIGHT_BRACKET { $$ = new FunHeader($1, $2); }
+fun_header   : ID ID arguments { $$ = new FunHeader($1, $2); }
 		 ;
 
-arguments: arguments COMMA ID ID
-		 | ID ID
-		 |
+arguments: LEFT_BRACKET arguments COMMA ID ID RIGHT_BRACKET
+		 | LEFT_BRACKET ID ID RIGHT_BRACKET
+		 | LEFT_BRACKET RIGHT_BRACKET
 		 ;
 
+//TODO: ñäåëàòü íåîáÿçàòåëüíîé òî÷êó ñ çàïÿòîé ïîñëå îêîí÷àíèÿ áëîêà (ïîñëå '}' )
 stlist	 : statement 
 			{ 
 				$$ = new BlockNode($1); 
 			}
 		 | stlist SEMICOLON statement 
 			{ 
-			//???????? ?? ?????? statement
 				if ($3 != null)
 				{
 					$1.Add($3);
-				}
+			    }
 				$$ = $1; 
 			}
 		 ;
@@ -85,7 +87,11 @@ statement: assign { $$ = $1; }
 		| { $$ = null; }
 	;
 
-decl	: VAR ID COLON ID { $$ = new DeclNode($2, $4); }
+decl	: ID ID { $$ = new DeclNode($1, $2); }
+		;
+
+//TODO: äîáàâèòü ôóíêöèè ñ àðãóìåíòàìè
+fun_call: ID arguments { $$ = new FunCallNode($1); }
 		;
 
 ident 	: ID { $$ = new IdNode($1); }	
@@ -94,7 +100,36 @@ ident 	: ID { $$ = new IdNode($1); }
 assign 	: ident ASSIGN expr { $$ = new AssignNode($1 as IdNode, $3); }
 		;
 
+b_expr	: b_expr OR b_term { $$ = new BinExprNode($1, $3, OpType.Or); }
+		| b_term { $$ = $1; }
+		;
+
+b_term	: b_term AND not_factor { $$ = new BinExprNode($1, $3, OpType.And); }
+		| not_factor { $$ = $1; }
+		;
+
+not_factor: b_factor { $$ = $1; }
+		  | NOT b_factor { $$ = new UnExprNode($2, OpType.Not); }
+
+b_factor: BVAL { $$ = new BoolNode($1); }
+//^^^^^^
+// Error: Syntax error, unexpected anchoredSymbol
+// ----------------------------------------------
+		| relation { $$ = $1; }
+		;
+
+relation: expr GT expr { $$ = new BinExprNode($1, $3, OpType.Gt); }
+		| expr LT expr { $$ = new BinExprNode($1, $3, OpType.Lt); }
+		| expr LET expr { $$ = new BinExprNode($1, $3, OpType.Let); }
+		| expr GET expr { $$ = new BinExprNode($1, $3, OpType.Get); }
+		| expr EQ expr { $$ = new BinExprNode($1, $3, OpType.Eq); }
+		| expr NEQ expr { $$ = new BinExprNode($1, $3, OpType.Neq); }
+		| expr { $$ = $1; }
+
 expr	: expr PLUS term { $$ = new BinExprNode($1, $3, OpType.Plus); }
+//^^
+// Error: Syntax error, unexpected anchoredSymbol
+// ----------------------------------------------
 		| expr MINUS term { $$ = new BinExprNode($1, $3, OpType.Minus); }
 		| term { $$ = $1; }
 		;
@@ -104,11 +139,11 @@ term    : term MULT factor { $$ = new BinExprNode($1, $3, OpType.Mult); }
 		| factor { $$ = $1; }
 		;
 
-factor  : LEFT_BRACKET expr RIGHT_BRACKET { $$ = $2; }
+factor  : LEFT_BRACKET b_expr RIGHT_BRACKET { $$ = $2; }
 		| ident  { $$ = $1 as IdNode; }
+		| fun_call { $$ = $1 as FunCallNode; }
 		| INUM { $$ = new IntNumNode($1); }
 		| DNUM { $$ = new DoubleNumNode($1); }
-		| BVAL { $$ = new BoolNode($1); }
 		;
 
 block	: BEGIN	stlist END { $$ = $2; }
@@ -119,10 +154,8 @@ cycle	: CYCLE expr statement { $$ = new CycleNode($2, $3); }
 
 return  : RETURN expr { $$ = new ReturnNode($2); }
 		| RETURN	  { $$ = new ReturnNode(); }
-
+		;
 %%
-// Error: Syntax error, unexpected "%%"
-// ------------------------------------
 
 // ==========================================================================
 

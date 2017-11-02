@@ -22,13 +22,13 @@
 
 %namespace SimpleParser
 
-%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT VAR COLON COMMA RETURN
+%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT VAR COLON COMMA RETURN GT LT EQ NEQ GET LET AND OR NOT
 %token <iVal> INUM 
 %token <dVal> DNUM 
 %token <bVal> BVAL
 %token <sVal> ID
 
-%type <eVal> expr ident term factor function fun_list fun_call
+%type <eVal> expr ident term factor function fun_list fun_call b_expr b_term b_factor not_factor relation
 %type <stVal> assign statement cycle decl return 
 %type <blVal> stlist block
 %type <fHead> fun_header
@@ -86,7 +86,32 @@ fun_call: ID arguments { $$ = new FunCallNode($1); }
 ident 	: ID { $$ = new IdNode($1); }	
 		;
 	
-assign 	: ident ASSIGN expr { $$ = new AssignNode($1 as IdNode, $3); }
+assign 	: ident ASSIGN b_expr { $$ = new AssignNode($1 as IdNode, $3); }
+		;
+
+b_expr	: b_expr OR b_term { $$ = new BinExprNode($1, $3, OpType.Or); }
+		| b_term { $$ = $1; }
+		;
+
+b_term	: b_term AND not_factor { $$ = new BinExprNode($1, $3, OpType.And); }
+		| not_factor { $$ = $1; }
+		;
+
+not_factor: b_factor { $$ = $1; }
+		  | NOT b_factor { $$ = new UnExprNode($2, OpType.Not); }
+		  ;
+
+b_factor: BVAL { $$ = new BoolNode($1); }
+		| relation { $$ = $1; }
+		;
+
+relation: expr GT expr { $$ = new BinExprNode($1, $3, OpType.Gt); }
+		| expr LT expr { $$ = new BinExprNode($1, $3, OpType.Lt); }
+		| expr LET expr { $$ = new BinExprNode($1, $3, OpType.Let); }
+		| expr GET expr { $$ = new BinExprNode($1, $3, OpType.Get); }
+		| expr EQ expr { $$ = new BinExprNode($1, $3, OpType.Eq); }
+		| expr NEQ expr { $$ = new BinExprNode($1, $3, OpType.Neq); }
+		| expr { $$ = $1; }
 		;
 
 expr	: expr PLUS term { $$ = new BinExprNode($1, $3, OpType.Plus); }
@@ -99,22 +124,21 @@ term    : term MULT factor { $$ = new BinExprNode($1, $3, OpType.Mult); }
 		| factor { $$ = $1; }
 		;
 
-factor  : LEFT_BRACKET expr RIGHT_BRACKET { $$ = $2; }
+factor  : LEFT_BRACKET b_expr RIGHT_BRACKET { $$ = $2; }
 		| ident  { $$ = $1 as IdNode; }
 		| fun_call { $$ = $1 as FunCallNode; }
 		| INUM { $$ = new IntNumNode($1); }
 		| DNUM { $$ = new DoubleNumNode($1); }
-		| BVAL { $$ = new BoolNode($1); }
 		;
 
 block	: BEGIN	stlist END { $$ = $2; }
 		;
 
-cycle	: CYCLE expr statement { $$ = new CycleNode($2, $3); }
+cycle	: CYCLE b_expr statement { $$ = new CycleNode($2, $3); }
 		;
 
-return  : RETURN expr { $$ = new ReturnNode($2); }
-		| RETURN	  { $$ = new ReturnNode(); }
+return  : RETURN b_expr { $$ = new ReturnNode($2); }
+		| RETURN	    { $$ = new ReturnNode(); }
 		;
 %%
 
