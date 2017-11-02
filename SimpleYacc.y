@@ -22,14 +22,14 @@
 
 %namespace SimpleParser
 
-%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT VAR COLON COMMA RETURN GT LT EQ NEQ GET LET AND OR NOT
+%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT VAR COLON COMMA RETURN GT LT EQ NEQ GET LET AND OR NOT IF ELSE
 %token <iVal> INUM 
 %token <dVal> DNUM 
 %token <bVal> BVAL
 %token <sVal> ID
 
 %type <eVal> expr ident term factor function fun_list fun_call b_expr b_term b_factor not_factor relation
-%type <stVal> assign statement cycle decl return 
+%type <stVal> assign statement cycle decl return cond
 %type <blVal> stlist block
 %type <fHead> fun_header
 
@@ -69,12 +69,13 @@ stlist	 : statement
 		 ;
 
 statement: assign { $$ = $1; }
+		| cond	  { $$ = $1; }
 		| decl	  { $$ = $1; }
 		| block   { $$ = $1; }
 		| cycle   { $$ = $1; }
 		| return  { $$ = $1; }
 		| { $$ = null; }
-	;
+		;
 
 decl	: ID ID { $$ = new DeclNode($1, $2); }
 		;
@@ -87,6 +88,11 @@ ident 	: ID { $$ = new IdNode($1); }
 		;
 	
 assign 	: ident ASSIGN b_expr { $$ = new AssignNode($1 as IdNode, $3); }
+		;
+
+cond	: IF LEFT_BRACKET b_expr RIGHT_BRACKET statement ELSE statement { $$ = new CondNode
+($3, $5, $7); }
+		| IF LEFT_BRACKET b_expr RIGHT_BRACKET statement { $$ = new CondNode($3, $5, null); }
 		;
 
 b_expr	: b_expr OR b_term { $$ = new BinExprNode($1, $3, OpType.Or); }

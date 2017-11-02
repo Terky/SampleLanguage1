@@ -1,0 +1,8 @@
+int greatestFibLessThen100() {
+ 
+}
+
+int main() {
+ int res;
+ res = greatestFibLessThen100();
+}

@@ -423,6 +423,42 @@ namespace ProgramTree
         }
     }
 
+    public class CondNode : StatementNode
+    {
+        ExprNode Expr { get; set; }
+
+        StatementNode StatIf { get; set; }
+
+        StatementNode StatElse { get; set; }
+
+        public CondNode(ExprNode expr, StatementNode statIf, StatementNode statElse)
+        {
+            Expr = expr;
+            StatIf = statIf;
+            StatElse = statElse;
+        }
+
+        public override void Exec()
+        {
+            VarSymbol expr = Expr.Eval();
+            if (expr.Type != Symbol.ValueType.BOOL)
+            {
+                throw new SemanticExepction("Несоответствие типов в условии If");
+            }
+            if (expr.Value.bValue)
+            {
+                StatIf.Exec();
+            }
+            else
+            {
+                if (StatElse != null)
+                {
+                    StatElse.Exec();
+                }
+            }
+        }
+    }
+
     public class CycleNode : StatementNode
     {
         public ExprNode Expr { get; set; }
