@@ -15,9 +15,26 @@ namespace SimpleLang
             this.prev = prev;
         }
 
-        public void Put(string id, Symbol sym)
+        public bool Contains(string key)
         {
-            table.Add(id, sym);
+            for (SymbolTable st = this; st != null; st = st.prev)
+            {
+                bool res = st.table.ContainsKey(key);
+                if (res)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void Put(string key, Symbol sym)
+        {
+            if (Contains(key))
+            {
+                throw new SimpleParser.SemanticExepction("Повторное обьявление переменной " + key);
+            }
+            table.Add(key, sym);
         }
 
         public Symbol Get(string key)

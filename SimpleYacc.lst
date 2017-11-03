@@ -4,7 +4,7 @@
 // ==========================================================================
 //  Version:  1.3.6
 //  Machine:  DESKTOP-32TFS7K
-//  DateTime: 03.11.2017 0:49:56
+//  DateTime: 03.11.2017 11:40:09
 //  UserName: wowit
 // ==========================================================================
 
@@ -45,12 +45,6 @@
 %type <fHead> fun_header
 
 %%
-// Error: NonTerminal symbol "else" has no productions
-// Warning: Terminating else fixes the following size-1 NonTerminal set
-   // {else}
-// Error: There are 1 non-terminating NonTerminal Symbols
-   //  {else}
-// --------------------------------------------------------------------
 
 progr    : fun_list { root = $1 as MainProgramNode; }
 		 ;
@@ -62,35 +56,40 @@ fun_list : function { $$ = new MainProgramNode($1 as FunNode); }
 function : fun_header block { $$ = new FunNode($1, $2); }
 		 ;
 
-fun_header   : ID ID arguments { $$ = new FunHeader($1, $2); }
-		 ;
+fun_header: ID ID arguments { $$ = new FunHeader($1, $2); }
+		  ;
 
 arguments: LEFT_BRACKET arguments COMMA ID ID RIGHT_BRACKET
 		 | LEFT_BRACKET ID ID RIGHT_BRACKET
 		 | LEFT_BRACKET RIGHT_BRACKET
 		 ;
 
-//TODO: ñäåëàòü íåîáÿçàòåëüíîé òî÷êó ñ çàïÿòîé ïîñëå îêîí÷àíèÿ áëîêà (ïîñëå '}' )
 stlist	 : statement 
 			{ 
 				$$ = new BlockNode($1); 
 			}
-		 | stlist SEMICOLON statement 
+		 | stlist statement 
 			{ 
 				if ($3 != null)
+//------^^
+// Error: Semantic action index is out of bounds
+// ---------------------------------------------
 				{
 					$1.Add($3);
+//----------^^
+// Error: Semantic action index is out of bounds
+// ---------------------------------------------
 			    }
 				$$ = $1; 
 			}
 		 ;
 
-statement: assign { $$ = $1; }
-		| cond	  { $$ = $1; }
-		| decl	  { $$ = $1; }
-		| block   { $$ = $1; }
-		| cycle   { $$ = $1; }
-		| return  { $$ = $1; }
+statement: assign SEMICOLON { $$ = $1; }
+		| cond				{ $$ = $1; }
+		| decl SEMICOLON	{ $$ = $1; }
+		| block				{ $$ = $1; }
+		| cycle				{ $$ = $1; }
+		| return SEMICOLON  { $$ = $1; }
 		| { $$ = null; }
 		;
 
@@ -107,8 +106,8 @@ ident 	: ID { $$ = new IdNode($1); }
 assign 	: ident ASSIGN b_expr { $$ = new AssignNode($1 as IdNode, $3); }
 		;
 
-cond	: IF LEFT_BRACKET b_expr RIGHT_BRACKET statement else statement { $$ = new CondNode ($3, $5, $7); }
-		| IF LEFT_BRACKET b_expr RIGHT_BRACKET statement { $$ = new CondNode ($3, $5, null); }
+cond	: IF LEFT_BRACKET b_expr RIGHT_BRACKET statement ELSE statement { $$ = new CondNode($3, $5, $7); }
+		| IF LEFT_BRACKET b_expr RIGHT_BRACKET statement { $$ = new CondNode($3, $5, null); }
 		;
 
 b_expr	: b_expr OR b_term { $$ = new BinExprNode($1, $3, OpType.Or); }

@@ -440,6 +440,8 @@ namespace ProgramTree
 
         public override void Exec()
         {
+            ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
+            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
             VarSymbol expr = Expr.Eval();
             if (expr.Type != Symbol.ValueType.BOOL)
             {
@@ -456,6 +458,7 @@ namespace ProgramTree
                     StatElse.Exec();
                 }
             }
+            ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
         }
     }
 
@@ -470,15 +473,18 @@ namespace ProgramTree
         }
         public override void Exec()
         {
+            ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
+            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
             VarSymbol val = Expr.Eval();
             if (val.Type != Symbol.ValueType.INT)
             {
-                //error
+                throw new SemanticExepction("Неверный тип в выражении для 'cycle'");
             }
             for (int i = 0; i < val.Value.iValue; ++i)
             {
                 Stat.Exec();
             }
+            ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
         }
     }
 

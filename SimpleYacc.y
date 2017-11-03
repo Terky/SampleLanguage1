@@ -45,36 +45,35 @@ fun_list : function { $$ = new MainProgramNode($1 as FunNode); }
 function : fun_header block { $$ = new FunNode($1, $2); }
 		 ;
 
-fun_header   : ID ID arguments { $$ = new FunHeader($1, $2); }
-		 ;
+fun_header: ID ID arguments { $$ = new FunHeader($1, $2); }
+		  ;
 
 arguments: LEFT_BRACKET arguments COMMA ID ID RIGHT_BRACKET
 		 | LEFT_BRACKET ID ID RIGHT_BRACKET
 		 | LEFT_BRACKET RIGHT_BRACKET
 		 ;
 
-//TODO: сделать необязательной точку с запятой после окончания блока (после '}' )
 stlist	 : statement 
 			{ 
 				$$ = new BlockNode($1); 
 			}
-		 | stlist SEMICOLON statement 
+		 | stlist statement 
 			{ 
-				if ($3 != null)
+				if ($2 != null)
 				{
-					$1.Add($3);
+					$1.Add($2);
 			    }
 				$$ = $1; 
 			}
 		 ;
 
-statement: assign { $$ = $1; }
-		| cond	  { $$ = $1; }
-		| decl	  { $$ = $1; }
-		| block   { $$ = $1; }
-		| cycle   { $$ = $1; }
-		| return  { $$ = $1; }
-		| { $$ = null; }
+statement: assign SEMICOLON { $$ = $1; }
+		| cond				{ $$ = $1; }
+		| decl SEMICOLON	{ $$ = $1; }
+		| block				{ $$ = $1; }
+		| cycle				{ $$ = $1; }
+		| return SEMICOLON  { $$ = $1; }
+		| SEMICOLON         { $$ = null; }
 		;
 
 decl	: ID ID { $$ = new DeclNode($1, $2); }
@@ -90,8 +89,7 @@ ident 	: ID { $$ = new IdNode($1); }
 assign 	: ident ASSIGN b_expr { $$ = new AssignNode($1 as IdNode, $3); }
 		;
 
-cond	: IF LEFT_BRACKET b_expr RIGHT_BRACKET statement ELSE statement { $$ = new CondNode
-($3, $5, $7); }
+cond	: IF LEFT_BRACKET b_expr RIGHT_BRACKET statement ELSE statement { $$ = new CondNode($3, $5, $7); }
 		| IF LEFT_BRACKET b_expr RIGHT_BRACKET statement { $$ = new CondNode($3, $5, null); }
 		;
 
