@@ -16,6 +16,8 @@
 			public StatementNode stVal;
 			public BlockNode blVal;
 			public FunHeader fHead;
+			public Arguments args;
+			public List<ExprNode> eList;
        }
 
 %using ProgramTree;
@@ -32,6 +34,8 @@
 %type <stVal> assign statement cycle decl return cond
 %type <blVal> stlist block
 %type <fHead> fun_header
+%type <args> arguments
+%type <eList> expr_list
 
 %%
 
@@ -45,12 +49,16 @@ fun_list : function { $$ = new MainProgramNode($1 as FunNode); }
 function : fun_header block { $$ = new FunNode($1, $2); }
 		 ;
 
-fun_header: ID ID arguments { $$ = new FunHeader($1, $2); }
+fun_header: ID ID LEFT_BRACKET arguments RIGHT_BRACKET { $$ = new FunHeader($1, $2, $4); }
+		  | ID ID LEFT_BRACKET RIGHT_BRACKET { $$ = new FunHeader($1, $2, null); }
 		  ;
 
-arguments: LEFT_BRACKET arguments COMMA ID ID RIGHT_BRACKET
-		 | LEFT_BRACKET ID ID RIGHT_BRACKET
-		 | LEFT_BRACKET RIGHT_BRACKET
+arguments: ID ID { $$ = new Arguments($1, $2); }
+		 | arguments COMMA ID ID  
+			{
+			  $1.Add($3,$4);
+			  $$ = $1; 
+			}
 		 ;
 
 stlist	 : statement 
@@ -67,26 +75,35 @@ stlist	 : statement
 			}
 		 ;
 
-statement: assign SEMICOLON { $$ = $1; }
+statement: assign           { $$ = $1; }
 		| cond				{ $$ = $1; }
-		| decl SEMICOLON	{ $$ = $1; }
+		| decl				{ $$ = $1; }
 		| block				{ $$ = $1; }
 		| cycle				{ $$ = $1; }
-		| return SEMICOLON  { $$ = $1; }
+		| return            { $$ = $1; }
 		| SEMICOLON         { $$ = null; }
 		;
 
-decl	: ID ID { $$ = new DeclNode($1, $2); }
+decl	: ID ID SEMICOLON { $$ = new DeclNode($1, $2); }
 		;
 
-//TODO: добавить функции с аргументами
-fun_call: ID arguments { $$ = new FunCallNode($1); }
+fun_call: ID LEFT_BRACKET expr_list RIGHT_BRACKET { $$ = new FunCallNode($1, $3); }
+		| ID LEFT_BRACKET RIGHT_BRACKET { $$ = new FunCallNode($1); }
 		;
+
+expr_list: b_expr { $$ = new List<ExprNode>();
+					$$.Add($1); }
+		 | expr_list COMMA b_expr 
+			{
+			  $1.Add($3);
+			  $$ = $1; 
+			}
+		 ;
 
 ident 	: ID { $$ = new IdNode($1); }	
 		;
 	
-assign 	: ident ASSIGN b_expr { $$ = new AssignNode($1 as IdNode, $3); }
+assign 	: ident ASSIGN b_expr SEMICOLON { $$ = new AssignNode($1 as IdNode, $3); }
 		;
 
 cond	: IF LEFT_BRACKET b_expr RIGHT_BRACKET statement ELSE statement { $$ = new CondNode($3, $5, $7); }
@@ -141,8 +158,8 @@ block	: BEGIN	stlist END { $$ = $2; }
 cycle	: CYCLE b_expr statement { $$ = new CycleNode($2, $3); }
 		;
 
-return  : RETURN b_expr { $$ = new ReturnNode($2); }
-		| RETURN	    { $$ = new ReturnNode(); }
+return  : RETURN b_expr SEMICOLON { $$ = new ReturnNode($2); }
+		| RETURN SEMICOLON        { $$ = new ReturnNode(); }
 		;
 %%
 

@@ -15,12 +15,61 @@ namespace ProgramTree
 
         public string Name { get; set; }
 
-        public FunHeader(string type, string name)
+        public Arguments Args { get; set; }
+
+        public FunHeader(string type, string name, Arguments args)
         {
+            if (args == null)
+            {
+                args = new Arguments();
+            }
             Name = name;
-            Type = (ParserHelper.GlobalTable.Get(type) as TypeSymbol).Value;
+            Symbol t = ParserHelper.GlobalTable.Get(type);
+            if (!(t is TypeSymbol))
+            {
+                throw new SemanticExepction("Недопустимый тип аргумента " + Type + Name);
+            }
+            Type = (t as TypeSymbol).Value;
+            Args = args;
+        }
+    }
+   
+    public class Arguments
+    {
+        public class Argument
+        {
+            public Symbol.ValueType Type { get; set; }
+
+            public string Name { get; set; }
+
+            public Argument(string type, string name)
+            {
+                Symbol t = ParserHelper.GlobalTable.Get(type);
+                if (!(t is TypeSymbol) || (t as TypeSymbol).Value == Symbol.ValueType.VOID)
+                {
+                    throw new SemanticExepction("Недопустимый тип аргумента " + Type + Name);
+                }
+                Type = (t as TypeSymbol).Value;
+                Name = name;
+            }
         }
 
+        public List<Argument> ArgList = new List<Argument>();
+
+        public Arguments(string type, string name)
+        {
+            ArgList.Add(new Argument(type, name));
+        }
+
+        public Arguments()
+        {
+
+        }
+
+        public void Add(string type, string name)
+        {
+            ArgList.Add(new Argument(type, name));
+        }
     }
 
     public class Node // базовый класс для всех узлов    
@@ -43,7 +92,10 @@ namespace ProgramTree
 
         public override VarSymbol Eval()
         {
-            return FunList[FunList.Count - 1].Eval();
+            ParserHelper.Stack.Push(new SymbolsRecord());
+            VarSymbol result = FunList[FunList.Count - 1].Eval();
+            ParserHelper.Stack.Pop();
+            return result;
         }
     }
 
@@ -63,15 +115,12 @@ namespace ProgramTree
 
         public override VarSymbol Eval()
         {
-            ParserHelper.Stack.Push(new SymbolsRecord());
             Body.Exec();
             VarSymbol result = ParserHelper.BottomTable().Get(SymbolTable.RESULT) as VarSymbol;
             if (result.Type != Header.Type)
             {
                 throw new SemanticExepction("Несоответствие типов кароч");
             }
-            //может быть ошибка
-            ParserHelper.Stack.Pop();
             return result;
         }
     }
@@ -395,6 +444,31 @@ namespace ProgramTree
         public abstract void Exec();
     }
 
+    public abstract class FStateStatementNode : StatementNode
+    {
+
+        private FinalState fState = FinalState.COMPLETE;
+
+        public FinalState FState
+        {
+            get
+            {
+                return fState;
+            }
+
+            set
+            {
+                fState = value;
+            }
+        }
+
+        public enum FinalState
+        {
+            RETURN,
+            COMPLETE
+        }
+    }
+
     public class AssignNode : StatementNode
     {
         public IdNode Id { get; set; }
@@ -423,7 +497,7 @@ namespace ProgramTree
         }
     }
 
-    public class CondNode : StatementNode
+    public class CondNode : FStateStatementNode
     {
         ExprNode Expr { get; set; }
 
@@ -445,24 +519,34 @@ namespace ProgramTree
             VarSymbol expr = Expr.Eval();
             if (expr.Type != Symbol.ValueType.BOOL)
             {
-                throw new SemanticExepction("Несоответствие типов в условии If");
+                throw new SemanticExepction("Несоответствие типов в выражении для оператора If");
             }
             if (expr.Value.bValue)
             {
                 StatIf.Exec();
+                if (StatIf is FStateStatementNode &&
+                    (StatIf as FStateStatementNode).FState == FinalState.RETURN)
+                {
+                    FState = FinalState.RETURN;
+                }
             }
             else
             {
                 if (StatElse != null)
                 {
                     StatElse.Exec();
+                    if (StatElse is FStateStatementNode &&
+                        (StatElse as FStateStatementNode).FState == FinalState.RETURN)
+                    {
+                        FState = FinalState.RETURN;
+                    }
                 }
             }
             ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
         }
     }
 
-    public class CycleNode : StatementNode
+    public class CycleNode : FStateStatementNode
     {
         public ExprNode Expr { get; set; }
         public StatementNode Stat { get; set; }
@@ -483,26 +567,23 @@ namespace ProgramTree
             for (int i = 0; i < val.Value.iValue; ++i)
             {
                 Stat.Exec();
+                if (Stat is FStateStatementNode &&
+                    (Stat as FStateStatementNode).FState == FinalState.RETURN)
+                {
+                    FState = FinalState.RETURN;
+                    break;
+                }
             }
             ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
         }
     }
 
-    public class BlockNode : StatementNode
+    public class BlockNode : FStateStatementNode
     {
-        public enum FinalState
-        {
-            RETURN,
-            COMPLETE
-        }
-
-        public FinalState FState { get; set; }
-
         public List<StatementNode> StList = new List<StatementNode>();
 
         public BlockNode(StatementNode stat)
         {
-            FState = FinalState.COMPLETE;
             if (stat != null)
             {
                 Add(stat);
@@ -521,13 +602,8 @@ namespace ProgramTree
             foreach (StatementNode stNode in StList)
             {
                 stNode.Exec();
-                if (stNode is ReturnNode)
-                {
-                    FState = FinalState.RETURN;
-                    break;
-                }
-                if ( stNode is BlockNode &&
-                    (stNode as BlockNode).FState == FinalState.RETURN)
+                if ( stNode is FStateStatementNode &&
+                    (stNode as FStateStatementNode).FState == FinalState.RETURN)
                 {
                     FState = FinalState.RETURN;
                     break;
@@ -540,21 +616,46 @@ namespace ProgramTree
 
     public class FunCallNode : ExprNode
     {
+        public FunCallNode(string name, List<ExprNode> exprList)
+        {
+            Name = name;
+            ExprList = exprList;
+        }
+
         public FunCallNode(string name)
         {
             Name = name;
+            ExprList = new List<ExprNode>();
         }
+
+        public List<ExprNode> ExprList { get; set; }
 
         public string Name { get; set; }
 
         public override VarSymbol Eval()
         {
             FunSymbol fun = ParserHelper.GlobalTable.Get(Name) as FunSymbol;
-            if (fun == null)
+            Arguments args = fun.Address.Header.Args;
+            if (args.ArgList.Count != ExprList.Count)
             {
-                //error
+                throw new SemanticExepction("Неверное количество параметров при вызове функции " + Name);
+            }
+            List<VarSymbol> callArgs = new List<VarSymbol>();
+            foreach (ExprNode expr in ExprList)
+            {
+                callArgs.Add(expr.Eval());
+            }
+            ParserHelper.Stack.Push(new SymbolsRecord());
+            for (int i = 0; i < args.ArgList.Count; ++i)
+            {
+                if (callArgs[i].Type != args.ArgList[i].Type)
+                {
+                    throw new SemanticExepction("Несоответствие типов в параметре " + args.ArgList[i].Name + " функции " + Name);
+                }
+                ParserHelper.TopTable().Put(args.ArgList[i].Name, callArgs[i]);
             }
             VarSymbol Value = fun.Address.Eval();
+            ParserHelper.Stack.Pop();
             return Value;
         }
     }
@@ -579,18 +680,23 @@ namespace ProgramTree
         public override void Exec()
         {
             VarSymbol s = new VarSymbol();
-            TypeSymbol t = (ParserHelper.GlobalTable.Get(Type)) as TypeSymbol;
-            s.Type = t.Value;
+            Symbol t = (ParserHelper.GlobalTable.Get(Type));
+            if (!(t is TypeSymbol))
+            {
+                throw new SemanticExepction("Неверный тип при обьявлении переменной: " + Type);
+            }
+            s.Type = (t as TypeSymbol).Value;
             ParserHelper.TopTable().Put(Name, s);
         }
     }
 
-    public class ReturnNode : StatementNode
+    public class ReturnNode : FStateStatementNode
     {
         public ExprNode Expr { get; set; }
 
         public ReturnNode(ExprNode expr)
         {
+            FState = FinalState.RETURN;
             Expr = expr;
         }
 

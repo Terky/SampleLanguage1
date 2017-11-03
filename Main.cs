@@ -10,7 +10,7 @@ namespace SimpleCompiler
     {
         public static void Main()
         {
-            string FileName = @"..\..\c.txt";
+            string FileName = @"..\..\sum.txt";
             try
             {
                 string Text = File.ReadAllText(FileName);

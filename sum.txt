@@ -1,0 +1,16 @@
+int sum(int n) {
+  return sum0(1,n);
+}
+
+int sum0(int current, int max) {
+  if (current == max) {
+    return current;
+  }
+  return current + sum0(current+1, max);
+}
+
+void main() {
+  int res;
+  res = sum(100);
+  return;
+}

@@ -1,0 +1,9 @@
+int succ(int n) {
+ return n+1;
+}
+
+int main() {
+  int k;
+  k = 3;
+  k = succ(k);
+}

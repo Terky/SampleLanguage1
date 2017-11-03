@@ -4,7 +4,7 @@
 // ==========================================================================
 //  Version:  1.3.6
 //  Machine:  DESKTOP-32TFS7K
-//  DateTime: 03.11.2017 11:40:09
+//  DateTime: 03.11.2017 11:57:00
 //  UserName: wowit
 // ==========================================================================
 
@@ -59,10 +59,20 @@ function : fun_header block { $$ = new FunNode($1, $2); }
 fun_header: ID ID arguments { $$ = new FunHeader($1, $2); }
 		  ;
 
-arguments: LEFT_BRACKET arguments COMMA ID ID RIGHT_BRACKET
-		 | LEFT_BRACKET ID ID RIGHT_BRACKET
+arguments: LEFT_BRACKET arguments' ID ID RIGHT_BRACKET
+//-------------------------------^
+// Error: Literal string terminated by EOL
+// ---------------------------------------
 		 | LEFT_BRACKET RIGHT_BRACKET
 		 ;
+
+arguments': arguments' ID ID COMMA
+//-------^-----------^
+// Error: Literal string terminated by EOL
+// Error: Literal string terminated by EOL
+// ---------------------------------------
+		  |
+		  ;
 
 stlist	 : statement 
 			{ 
@@ -70,15 +80,9 @@ stlist	 : statement
 			}
 		 | stlist statement 
 			{ 
-				if ($3 != null)
-//------^^
-// Error: Semantic action index is out of bounds
-// ---------------------------------------------
+				if ($2 != null)
 				{
-					$1.Add($3);
-//----------^^
-// Error: Semantic action index is out of bounds
-// ---------------------------------------------
+					$1.Add($2);
 			    }
 				$$ = $1; 
 			}
@@ -90,7 +94,7 @@ statement: assign SEMICOLON { $$ = $1; }
 		| block				{ $$ = $1; }
 		| cycle				{ $$ = $1; }
 		| return SEMICOLON  { $$ = $1; }
-		| { $$ = null; }
+		| SEMICOLON         { $$ = null; }
 		;
 
 decl	: ID ID { $$ = new DeclNode($1, $2); }
