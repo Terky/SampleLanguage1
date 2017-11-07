@@ -187,7 +187,7 @@ namespace ProgramTree
 
             VarSymbol res = new VarSymbol();
             //-----------------------------------------
-            //TODO: Сделать по-человечески (пожалуйста)
+            // TODO: Сделать по-человечески (пожалуйста)
             //-----------------------------------------
             switch (Op)
             {
@@ -612,6 +612,21 @@ namespace ProgramTree
             ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
         }
 
+    }
+
+    public class ProcCallNode : StatementNode
+    {
+        private FunCallNode FunCall { get; set; }
+
+        public ProcCallNode(FunCallNode funCall)
+        {
+            FunCall = funCall;
+        }
+
+        public override void Exec()
+        {
+            FunCall.Eval();
+        }
     }
 
     public class FunCallNode : ExprNode

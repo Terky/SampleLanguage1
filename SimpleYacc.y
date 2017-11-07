@@ -31,7 +31,7 @@
 %token <sVal> ID
 
 %type <eVal> expr ident term factor function fun_list fun_call b_expr b_term b_factor not_factor relation
-%type <stVal> assign statement cycle decl return cond
+%type <stVal> assign statement cycle decl return cond proc
 %type <blVal> stlist block
 %type <fHead> fun_header
 %type <args> arguments
@@ -81,7 +81,11 @@ statement: assign           { $$ = $1; }
 		| block				{ $$ = $1; }
 		| cycle				{ $$ = $1; }
 		| return            { $$ = $1; }
+		| proc				{ $$ = $1; }
 		| SEMICOLON         { $$ = null; }
+		;
+
+proc	: fun_call SEMICOLON { $$ = new ProcCallNode($1 as FunCallNode); }
 		;
 
 decl	: ID ID SEMICOLON { $$ = new DeclNode($1, $2); }
