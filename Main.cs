@@ -10,7 +10,7 @@ namespace SimpleCompiler
     {
         public static void Main()
         {
-            string FileName = @"..\..\b.txt";
+            string FileName = @"..\..\d.txt";
             try
             {
                 string Text = File.ReadAllText(FileName);
@@ -29,7 +29,7 @@ namespace SimpleCompiler
                     //foreach (var st in parser.root.StList)
                     //Console.WriteLine(st);
                 }
-                parser.root.Exec();
+                parser.root.Eval();
             }
             catch (FileNotFoundException)
             {

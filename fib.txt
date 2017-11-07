@@ -1,0 +1,12 @@
+int greatestFibLessThen(int fst, int sec, int upperBound) {
+ if (sec > upperBound) {
+   return fst;
+ }
+ return greatestFibLessThen(sec, fst+sec, upperBound);
+}
+
+void main() {
+ int res;
+ res = greatestFibLessThen(1, 1, 1000);
+ return;
+}

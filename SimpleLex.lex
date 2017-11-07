@@ -38,7 +38,7 @@ ID {Alpha}{AlphaDigit}*
 
 "+" { return (int)Tokens.PLUS; }
 "-" { return (int)Tokens.MINUS; }
-":=" { return (int)Tokens.ASSIGN; }
+"=" { return (int)Tokens.ASSIGN; }
 ";" { return (int)Tokens.SEMICOLON; }
 "(" { return (int)Tokens.LEFT_BRACKET; }
 ")" { return (int)Tokens.RIGHT_BRACKET; }
@@ -46,6 +46,17 @@ ID {Alpha}{AlphaDigit}*
 "/" { return (int)Tokens.DIV; }
 ":" { return (int)Tokens.COLON; }
 "," { return (int)Tokens.COMMA; }
+"{" { return (int)Tokens.BEGIN; }
+"}" { return (int)Tokens.END; }
+">" { return (int)Tokens.GT; }
+"<" { return (int)Tokens.LT; }
+">=" { return (int)Tokens.GET; }
+"<=" { return (int)Tokens.LET; }
+"!=" { return (int)Tokens.NEQ; }
+"==" { return (int)Tokens.EQ; }
+"&&" { return (int)Tokens.AND; }
+"||" { return (int)Tokens.OR; }
+"!" { return (int)Tokens.NOT; }
 
 [^ \r\n] {
 	LexError();
@@ -77,10 +88,11 @@ class ScannerHelper
   static ScannerHelper() 
   {
     keywords = new Dictionary<string,int>();
-    keywords.Add("begin",(int)Tokens.BEGIN);
-    keywords.Add("end",(int)Tokens.END);
     keywords.Add("cycle",(int)Tokens.CYCLE);
 	keywords.Add("var", (int)Tokens.VAR);
+	keywords.Add("return", (int)Tokens.RETURN);
+	keywords.Add("if", (int)Tokens.IF);
+	keywords.Add("else", (int)Tokens.ELSE);
   }
   public static int GetIDToken(string s)
   {

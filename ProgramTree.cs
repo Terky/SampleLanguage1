@@ -7,23 +7,80 @@ namespace ProgramTree
 {
     public enum AssignType { Assign, AssignPlus, AssignMinus, AssignMult, AssignDivide };
 
-    public enum OpType { Plus, Minus, Div, Mult };
+    public enum OpType { Plus, Minus, Div, Mult, Or, And, Not, Lt, Gt, Let, Get, Eq, Neq };
+
+    public class FunHeader
+    {
+        public Symbol.ValueType Type { get; set; }
+
+        public string Name { get; set; }
+
+        public Arguments Args { get; set; }
+
+        public FunHeader(string type, string name, Arguments args)
+        {
+            if (args == null)
+            {
+                args = new Arguments();
+            }
+            Name = name;
+            Symbol t = ParserHelper.GlobalTable.Get(type);
+            if (!(t is TypeSymbol))
+            {
+                throw new SemanticExepction("Недопустимый тип аргумента " + Type + Name);
+            }
+            Type = (t as TypeSymbol).Value;
+            Args = args;
+        }
+    }
+   
+    public class Arguments
+    {
+        public class Argument
+        {
+            public Symbol.ValueType Type { get; set; }
+
+            public string Name { get; set; }
+
+            public Argument(string type, string name)
+            {
+                Symbol t = ParserHelper.GlobalTable.Get(type);
+                if (!(t is TypeSymbol) || (t as TypeSymbol).Value == Symbol.ValueType.VOID)
+                {
+                    throw new SemanticExepction("Недопустимый тип аргумента " + Type + Name);
+                }
+                Type = (t as TypeSymbol).Value;
+                Name = name;
+            }
+        }
+
+        public List<Argument> ArgList = new List<Argument>();
+
+        public Arguments(string type, string name)
+        {
+            ArgList.Add(new Argument(type, name));
+        }
+
+        public Arguments()
+        {
+
+        }
+
+        public void Add(string type, string name)
+        {
+            ArgList.Add(new Argument(type, name));
+        }
+    }
 
     public class Node // базовый класс для всех узлов    
     {
     }
 
-    public class ProgrammNode : Node
-    {
-        FunListNode Functions { get; set; }
-        BlockNode Programm { get; set; }
-    }
-
-    public class FunListNode : Node
+    public class MainProgramNode : ExprNode
     {
         public List<FunNode> FunList = new List<FunNode>();
 
-        public FunListNode(FunNode fun)
+        public MainProgramNode(FunNode fun)
         {
             Add(fun);
         }
@@ -32,16 +89,39 @@ namespace ProgramTree
         {
             FunList.Add(fun);
         }
+
+        public override VarSymbol Eval()
+        {
+            ParserHelper.Stack.Push(new SymbolsRecord());
+            VarSymbol result = FunList[FunList.Count - 1].Eval();
+            ParserHelper.Stack.Pop();
+            return result;
+        }
     }
 
     public class FunNode : ExprNode
     {
+        public FunHeader Header { get; set; }
+
         public BlockNode Body { get; set; }
+
+        public FunNode(FunHeader header, BlockNode body)
+        {
+            Header = header;
+            Body = body;
+            FunSymbol funSymbol = new FunSymbol(header.Type, this);
+            ParserHelper.GlobalTable.Put(Header.Name, funSymbol);
+        }
 
         public override VarSymbol Eval()
         {
             Body.Exec();
-            
+            VarSymbol result = ParserHelper.BottomTable().Get(SymbolTable.RESULT) as VarSymbol;
+            if (result.Type != Header.Type)
+            {
+                throw new SemanticExepction("Несоответствие типов кароч");
+            }
+            return result;
         }
     }
 
@@ -62,7 +142,7 @@ namespace ProgramTree
 
         public override VarSymbol Eval()
         {
-            VarSymbol s = ParserHelper.top.Get(Name) as VarSymbol;
+            VarSymbol s = ParserHelper.TopTable().Get(Name) as VarSymbol;
             if (s == null)
             {
                 //error
@@ -101,11 +181,14 @@ namespace ProgramTree
                     ParserHelper.upCast(rightValue, Symbol.ValueType.DOUBLE);
                 } else
                 {
-                    //error
+                    throw new SemanticExepction("Несоответствие типов, оператор " + Op.ToString());
                 }
             }
 
             VarSymbol res = new VarSymbol();
+            //-----------------------------------------
+            // TODO: Сделать по-человечески (пожалуйста)
+            //-----------------------------------------
             switch (Op)
             {
                 case OpType.Plus:
@@ -119,6 +202,8 @@ namespace ProgramTree
                             res.Type = Symbol.ValueType.INT;
                             res.Value.iValue = leftValue.Value.iValue + rightValue.Value.iValue;
                             break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
                     }
                     break;
                 case OpType.Minus:
@@ -132,6 +217,8 @@ namespace ProgramTree
                             res.Type = Symbol.ValueType.INT;
                             res.Value.iValue = leftValue.Value.iValue - rightValue.Value.iValue;
                             break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
                     }
                     break;
                 case OpType.Mult:
@@ -145,6 +232,8 @@ namespace ProgramTree
                             res.Type = Symbol.ValueType.INT;
                             res.Value.iValue = leftValue.Value.iValue * rightValue.Value.iValue;
                             break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
                     }
                     break;
                 case OpType.Div:
@@ -158,12 +247,157 @@ namespace ProgramTree
                             res.Type = Symbol.ValueType.INT;
                             res.Value.iValue = leftValue.Value.iValue / rightValue.Value.iValue;
                             break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
+                    }
+                    break;
+                case OpType.And:
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.BOOL:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.bValue && rightValue.Value.bValue;
+                            break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
+                    }
+                    break;
+                case OpType.Or:
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.BOOL:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.bValue || rightValue.Value.bValue;
+                            break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
+                    }
+                    break;
+                case OpType.Gt:
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.INT:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.iValue > rightValue.Value.iValue;
+                            break;
+                        case Symbol.ValueType.DOUBLE:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.dValue > rightValue.Value.dValue;
+                            break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
+                    }
+                    break;
+                case OpType.Lt:
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.INT:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.iValue < rightValue.Value.iValue;
+                            break;
+                        case Symbol.ValueType.DOUBLE:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.dValue < rightValue.Value.dValue;
+                            break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
+                    }
+                    break;
+                case OpType.Get:
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.INT:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.iValue >= rightValue.Value.iValue;
+                            break;
+                        case Symbol.ValueType.DOUBLE:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.dValue >= rightValue.Value.dValue;
+                            break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
+                    }
+                    break;
+                case OpType.Let:
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.INT:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.iValue <= rightValue.Value.iValue;
+                            break;
+                        case Symbol.ValueType.DOUBLE:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.dValue <= rightValue.Value.dValue;
+                            break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
+                    }
+                    break;
+                case OpType.Eq:
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.INT:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.iValue == rightValue.Value.iValue;
+                            break;
+                        case Symbol.ValueType.DOUBLE:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.dValue == rightValue.Value.dValue;
+                            break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
+                    }
+                    break;
+                case OpType.Neq:
+                    switch (leftValue.Type)
+                    {
+                        case Symbol.ValueType.INT:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.iValue != rightValue.Value.iValue;
+                            break;
+                        case Symbol.ValueType.DOUBLE:
+                            res.Type = Symbol.ValueType.BOOL;
+                            res.Value.bValue = leftValue.Value.dValue != rightValue.Value.dValue;
+                            break;
+                        default:
+                            throw new SemanticExepction("Оператор " + Op.ToString() + " применяется к неподходящим типам");
                     }
                     break;
             }
             return res;
         }
 
+    }
+
+    public class UnExprNode : ExprNode
+    {
+        ExprNode Expr { get; set; }
+
+        OpType Op { get; set; }
+
+        public UnExprNode(ExprNode expr, OpType op)
+        {
+            Expr = expr;
+            Op = op;
+        }
+
+        public override VarSymbol Eval()
+        {
+            switch (Op)
+            {
+                case OpType.Not:
+                    VarSymbol res = Expr.Eval();
+                    if (res.Type != Symbol.ValueType.BOOL)
+                    {
+                        throw new SemanticExepction("Несоответствие типов, оператор '!'");
+                    }
+                    VarSymbol.VarValue value = new VarSymbol.VarValue();
+                    value.bValue = !res.Value.bValue;
+                    return new VarSymbol(Symbol.ValueType.BOOL, value);
+                default:
+                    throw new SemanticExepction("Недопустимый унарный оператор");
+            }
+        }
     }
 
     public class IntNumNode : ExprNode
@@ -210,6 +444,31 @@ namespace ProgramTree
         public abstract void Exec();
     }
 
+    public abstract class FStateStatementNode : StatementNode
+    {
+
+        private FinalState fState = FinalState.COMPLETE;
+
+        public FinalState FState
+        {
+            get
+            {
+                return fState;
+            }
+
+            set
+            {
+                fState = value;
+            }
+        }
+
+        public enum FinalState
+        {
+            RETURN,
+            COMPLETE
+        }
+    }
+
     public class AssignNode : StatementNode
     {
         public IdNode Id { get; set; }
@@ -223,7 +482,7 @@ namespace ProgramTree
         }
         public override void Exec()
         {
-            VarSymbol s = ParserHelper.top.Get(Id.Name) as VarSymbol;
+            VarSymbol s = ParserHelper.TopTable().Get(Id.Name) as VarSymbol;
             if (s == null)
             { // Возможно недостижимый код
                 throw new SemanticExepction("How do you get here?");
@@ -238,7 +497,56 @@ namespace ProgramTree
         }
     }
 
-    public class CycleNode : StatementNode
+    public class CondNode : FStateStatementNode
+    {
+        ExprNode Expr { get; set; }
+
+        StatementNode StatIf { get; set; }
+
+        StatementNode StatElse { get; set; }
+
+        public CondNode(ExprNode expr, StatementNode statIf, StatementNode statElse)
+        {
+            Expr = expr;
+            StatIf = statIf;
+            StatElse = statElse;
+        }
+
+        public override void Exec()
+        {
+            ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
+            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
+            VarSymbol expr = Expr.Eval();
+            if (expr.Type != Symbol.ValueType.BOOL)
+            {
+                throw new SemanticExepction("Несоответствие типов в выражении для оператора If");
+            }
+            if (expr.Value.bValue)
+            {
+                StatIf.Exec();
+                if (StatIf is FStateStatementNode &&
+                    (StatIf as FStateStatementNode).FState == FinalState.RETURN)
+                {
+                    FState = FinalState.RETURN;
+                }
+            }
+            else
+            {
+                if (StatElse != null)
+                {
+                    StatElse.Exec();
+                    if (StatElse is FStateStatementNode &&
+                        (StatElse as FStateStatementNode).FState == FinalState.RETURN)
+                    {
+                        FState = FinalState.RETURN;
+                    }
+                }
+            }
+            ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
+        }
+    }
+
+    public class CycleNode : FStateStatementNode
     {
         public ExprNode Expr { get; set; }
         public StatementNode Stat { get; set; }
@@ -249,25 +557,37 @@ namespace ProgramTree
         }
         public override void Exec()
         {
+            ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
+            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
             VarSymbol val = Expr.Eval();
             if (val.Type != Symbol.ValueType.INT)
             {
-                //error
+                throw new SemanticExepction("Неверный тип в выражении для 'cycle'");
             }
             for (int i = 0; i < val.Value.iValue; ++i)
             {
                 Stat.Exec();
+                if (Stat is FStateStatementNode &&
+                    (Stat as FStateStatementNode).FState == FinalState.RETURN)
+                {
+                    FState = FinalState.RETURN;
+                    break;
+                }
             }
+            ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
         }
     }
 
-    public class BlockNode : StatementNode
+    public class BlockNode : FStateStatementNode
     {
         public List<StatementNode> StList = new List<StatementNode>();
 
         public BlockNode(StatementNode stat)
         {
-            Add(stat);
+            if (stat != null)
+            {
+                Add(stat);
+            }
         }
 
         public void Add(StatementNode stat)
@@ -277,15 +597,82 @@ namespace ProgramTree
 
         public override void Exec()
         {
-            ParserHelper.saved = ParserHelper.top;
-            ParserHelper.top = new SymbolTable(ParserHelper.top);
+            ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
+            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
             foreach (StatementNode stNode in StList)
             {
                 stNode.Exec();
+                if ( stNode is FStateStatementNode &&
+                    (stNode as FStateStatementNode).FState == FinalState.RETURN)
+                {
+                    FState = FinalState.RETURN;
+                    break;
+                }
             }
-            ParserHelper.top = ParserHelper.saved;
+            ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
         }
 
+    }
+
+    public class ProcCallNode : StatementNode
+    {
+        private FunCallNode FunCall { get; set; }
+
+        public ProcCallNode(FunCallNode funCall)
+        {
+            FunCall = funCall;
+        }
+
+        public override void Exec()
+        {
+            FunCall.Eval();
+        }
+    }
+
+    public class FunCallNode : ExprNode
+    {
+        public FunCallNode(string name, List<ExprNode> exprList)
+        {
+            Name = name;
+            ExprList = exprList;
+        }
+
+        public FunCallNode(string name)
+        {
+            Name = name;
+            ExprList = new List<ExprNode>();
+        }
+
+        public List<ExprNode> ExprList { get; set; }
+
+        public string Name { get; set; }
+
+        public override VarSymbol Eval()
+        {
+            FunSymbol fun = ParserHelper.GlobalTable.Get(Name) as FunSymbol;
+            Arguments args = fun.Address.Header.Args;
+            if (args.ArgList.Count != ExprList.Count)
+            {
+                throw new SemanticExepction("Неверное количество параметров при вызове функции " + Name);
+            }
+            List<VarSymbol> callArgs = new List<VarSymbol>();
+            foreach (ExprNode expr in ExprList)
+            {
+                callArgs.Add(expr.Eval());
+            }
+            ParserHelper.Stack.Push(new SymbolsRecord());
+            for (int i = 0; i < args.ArgList.Count; ++i)
+            {
+                if (callArgs[i].Type != args.ArgList[i].Type)
+                {
+                    throw new SemanticExepction("Несоответствие типов в параметре " + args.ArgList[i].Name + " функции " + Name);
+                }
+                ParserHelper.TopTable().Put(args.ArgList[i].Name, callArgs[i]);
+            }
+            VarSymbol Value = fun.Address.Eval();
+            ParserHelper.Stack.Pop();
+            return Value;
+        }
     }
 
     public class DeclNode : StatementNode
@@ -295,7 +682,7 @@ namespace ProgramTree
 
         public string Type { set; get; }
 
-        public DeclNode(string name, string type)
+        public DeclNode(string type, string name)
         {
             if (type == "void")
             {
@@ -308,9 +695,42 @@ namespace ProgramTree
         public override void Exec()
         {
             VarSymbol s = new VarSymbol();
-            TypeSymbol t = (ParserHelper.top.Get(Type)) as TypeSymbol;
-            s.Type = t.Value;
-            ParserHelper.top.Put(Name, s);
+            Symbol t = (ParserHelper.GlobalTable.Get(Type));
+            if (!(t is TypeSymbol))
+            {
+                throw new SemanticExepction("Неверный тип при обьявлении переменной: " + Type);
+            }
+            s.Type = (t as TypeSymbol).Value;
+            ParserHelper.TopTable().Put(Name, s);
+        }
+    }
+
+    public class ReturnNode : FStateStatementNode
+    {
+        public ExprNode Expr { get; set; }
+
+        public ReturnNode(ExprNode expr)
+        {
+            FState = FinalState.RETURN;
+            Expr = expr;
+        }
+
+        //Для void
+        public ReturnNode() { }
+
+        public override void Exec()
+        {
+            VarSymbol value;
+            if (Expr != null) {
+                value = Expr.Eval();
+            } else
+            {
+                value = new VarSymbol();
+                value.Type = Symbol.ValueType.VOID;
+            }
+            VarSymbol result = ParserHelper.BottomTable().Get(SymbolTable.RESULT) as VarSymbol;
+            result.Type = value.Type;
+            result.Value = value.Value;
         }
     }
 }

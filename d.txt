@@ -1,0 +1,16 @@
+int succ(int n) {
+ return n+1;
+}
+
+void doAll() {
+ int k;
+ k = 42*42+42;
+ return;
+}
+
+int main() {
+  int k;
+  k = 3;
+  succ(k);
+  doAll();
+}
