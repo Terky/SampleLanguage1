@@ -770,4 +770,41 @@ namespace ProgramTree
             ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
         }
     }
+
+    public class DoWhileNode : FStateStatementNode
+    {
+
+        public ExprNode Expr { get; set; }
+
+        public StatementNode Stat { get; set; }
+
+        public DoWhileNode(ExprNode expr, StatementNode stat)
+        {
+            Expr = expr;
+            Stat = stat;
+        }
+
+        public override void Exec()
+        {
+            ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
+            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
+            VarSymbol expr;
+            do
+            {
+                Stat.Exec();
+                if (Stat is FStateStatementNode &&
+                    (Stat as FStateStatementNode).FState == FinalState.RETURN)
+                {
+                    FState = FinalState.RETURN;
+                    break;
+                }
+                expr = Expr.Eval();
+                if (expr.Type != Symbol.ValueType.BOOL)
+                {
+                    throw new SemanticExepction("Несоответствие типов в выражении для цикла do while");
+                }
+            } while (expr.Value.bValue);
+            ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
+        }
+    }
 }
