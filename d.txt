@@ -4,7 +4,13 @@ int succ(int n) {
 
 void doAll() {
  int k;
- k = 42*42+42;
+ k = 0;
+ while(k < 10) {
+   k = k + 1;
+   if(k == 5) {
+     return;
+   }
+ }
  return;
 }
 

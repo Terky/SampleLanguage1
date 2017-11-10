@@ -490,7 +490,7 @@ namespace ProgramTree
             VarSymbol exprVal = Expr.Eval();
             if (s.Type != exprVal.Type)
             {
-                //error - несовместимые типы. Нужно сделать совместимыми не только равные типы
+                throw new SemanticExepction("Несовместимые по присваиванию типы: " + s.Type + " и " + exprVal.Type);
             }
 			s.Value = exprVal.Value;
             Console.WriteLine("{0} := int: {1}, double: {2}, bool: {3}", Id.Name, s.Value.iValue, s.Value.dValue, s.Value.bValue);
@@ -711,7 +711,6 @@ namespace ProgramTree
 
         public ReturnNode(ExprNode expr)
         {
-            FState = FinalState.RETURN;
             Expr = expr;
         }
 
@@ -720,6 +719,7 @@ namespace ProgramTree
 
         public override void Exec()
         {
+            FState = FinalState.RETURN;
             VarSymbol value;
             if (Expr != null) {
                 value = Expr.Eval();
@@ -731,6 +731,43 @@ namespace ProgramTree
             VarSymbol result = ParserHelper.BottomTable().Get(SymbolTable.RESULT) as VarSymbol;
             result.Type = value.Type;
             result.Value = value.Value;
+        }
+    }
+
+    public class WhileNode : FStateStatementNode
+    {
+
+        public ExprNode Expr { get; set; }
+
+        public StatementNode Stat { get; set; }
+
+        public WhileNode(ExprNode expr, StatementNode stat)
+        {
+            Expr = expr;
+            Stat = stat;
+        }
+
+        public override void Exec()
+        {
+            ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
+            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
+            VarSymbol expr = Expr.Eval();
+            if (expr.Type != Symbol.ValueType.BOOL)
+            {
+                throw new SemanticExepction("Несоответствие типов в выражении для цикла while");
+            }
+            while (expr.Value.bValue)
+            {
+                Stat.Exec();
+                if (Stat is FStateStatementNode &&
+                    (Stat as FStateStatementNode).FState == FinalState.RETURN)
+                {
+                    FState = FinalState.RETURN;
+                    break;
+                }
+                expr = Expr.Eval();
+            }
+            ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
         }
     }
 }

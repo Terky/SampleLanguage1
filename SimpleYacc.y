@@ -24,14 +24,14 @@
 
 %namespace SimpleParser
 
-%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT VAR COLON COMMA RETURN GT LT EQ NEQ GET LET AND OR NOT IF ELSE
+%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT VAR COLON COMMA RETURN GT LT EQ NEQ GET LET AND OR NOT IF ELSE WHILE
 %token <iVal> INUM 
 %token <dVal> DNUM 
 %token <bVal> BVAL
 %token <sVal> ID
 
 %type <eVal> expr ident term factor function fun_list fun_call b_expr b_term b_factor not_factor relation
-%type <stVal> assign statement cycle decl return cond proc
+%type <stVal> assign statement cycle decl return cond proc while_cycle
 %type <blVal> stlist block
 %type <fHead> fun_header
 %type <args> arguments
@@ -82,6 +82,7 @@ statement: assign           { $$ = $1; }
 		| cycle				{ $$ = $1; }
 		| return            { $$ = $1; }
 		| proc				{ $$ = $1; }
+		| while_cycle
 		| SEMICOLON         { $$ = null; }
 		;
 
@@ -161,6 +162,9 @@ block	: BEGIN	stlist END { $$ = $2; }
 
 cycle	: CYCLE b_expr statement { $$ = new CycleNode($2, $3); }
 		;
+
+while_cycle: WHILE LEFT_BRACKET b_expr RIGHT_BRACKET statement { $$ = new WhileNode($3, $5); }
+		   ;
 
 return  : RETURN b_expr SEMICOLON { $$ = new ReturnNode($2); }
 		| RETURN SEMICOLON        { $$ = new ReturnNode(); }
