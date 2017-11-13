@@ -56,11 +56,6 @@ namespace SimpleParser
             return Stack.Peek().BottomTable;
         }
 
-        public static SymbolTable SavedTable()
-        {
-            return Stack.Peek().SavedTable;
-        }
-
         static ParserHelper()
         {
             GlobalTable.Put("int", new TypeSymbol(Symbol.ValueType.INT));

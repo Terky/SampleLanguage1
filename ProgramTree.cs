@@ -513,7 +513,7 @@ namespace ProgramTree
 
         public override void Exec()
         {
-            ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
+            var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
             VarSymbol expr = Expr.Eval();
             if (expr.Type != Symbol.ValueType.BOOL)
@@ -541,7 +541,7 @@ namespace ProgramTree
                     }
                 }
             }
-            ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
+            ParserHelper.Stack.Peek().TopTable = savedTable;
         }
     }
 
@@ -556,7 +556,7 @@ namespace ProgramTree
         }
         public override void Exec()
         {
-            ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
+            var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
             VarSymbol val = Expr.Eval();
             if (val.Type != Symbol.ValueType.INT)
@@ -573,7 +573,7 @@ namespace ProgramTree
                     break;
                 }
             }
-            ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
+            ParserHelper.Stack.Peek().TopTable = savedTable;
         }
     }
 
@@ -596,7 +596,7 @@ namespace ProgramTree
 
         public override void Exec()
         {
-            ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
+            var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
             foreach (StatementNode stNode in StList)
             {
@@ -608,7 +608,7 @@ namespace ProgramTree
                     break;
                 }
             }
-            ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
+            ParserHelper.Stack.Peek().TopTable = savedTable;
         }
 
     }
@@ -759,7 +759,7 @@ namespace ProgramTree
 
         public override void Exec()
         {
-            ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
+            var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
             VarSymbol expr = Expr.Eval();
             if (expr.Type != Symbol.ValueType.BOOL)
@@ -777,7 +777,7 @@ namespace ProgramTree
                 }
                 expr = Expr.Eval();
             }
-            ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
+            ParserHelper.Stack.Peek().TopTable = savedTable;
         }
     }
 
@@ -796,11 +796,12 @@ namespace ProgramTree
 
         public override void Exec()
         {
-            ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
+            var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
             VarSymbol expr;
             do
             {
+                bool isBlock = Stat is BlockNode;
                 Stat.Exec();
                 if (Stat is FStateStatementNode &&
                     (Stat as FStateStatementNode).FState == FinalState.RETURN)
@@ -814,7 +815,7 @@ namespace ProgramTree
                     throw new SemanticExepction("Несоответствие типов в выражении для цикла do while");
                 }
             } while (expr.Value.bValue);
-            ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
+            ParserHelper.Stack.Peek().TopTable = savedTable;
         }
     }
 
@@ -846,7 +847,7 @@ namespace ProgramTree
 
         public override void Exec()
         {
-            ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
+            var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
             Init.Exec();
             VarSymbol init_var = null;
@@ -866,30 +867,17 @@ namespace ProgramTree
             while (cond_val.Value.bValue)
             {
                 bool isBlock = Stat is BlockNode;
-                if (!isBlock)
-                {
-                    ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
-                    ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
-                }
                 Stat.Exec();
                 if (Stat is FStateStatementNode &&
                     (Stat as FStateStatementNode).FState == FinalState.RETURN)
                 {
                     FState = FinalState.RETURN;
-                    if (!isBlock)
-                    {
-                        ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
-                    }
                     break;
                 }
                 Iter.Exec();
                 cond_val = Cond.Eval();
-                if (!isBlock)
-                {
-                    ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
-                }
             }
-            ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
+            ParserHelper.Stack.Peek().TopTable = savedTable;
         }
     }
 }
