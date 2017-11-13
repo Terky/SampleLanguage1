@@ -69,17 +69,21 @@ namespace SimpleParser
             GlobalTable.Put("void", new TypeSymbol(Symbol.ValueType.VOID));
         }
 
-        public static void upCast(VarSymbol value, Symbol.ValueType type)
+        public static VarSymbol upCast(VarSymbol value, Symbol.ValueType type)
         {
+            VarSymbol res = new VarSymbol();
             switch (value.Type)
             {
                 case Symbol.ValueType.INT:
-                    value.Type = Symbol.ValueType.DOUBLE;
-                    value.Value.dValue = value.Value.iValue;
+                    res.Type = Symbol.ValueType.DOUBLE;
+                    res.Value.dValue = value.Value.iValue;
                     break;
                 case Symbol.ValueType.DOUBLE:
+                    res.Type = Symbol.ValueType.DOUBLE;
+                    res.Value.dValue = value.Value.dValue;
                     break;
             }
+            return res;
         }
     }
 }

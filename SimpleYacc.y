@@ -24,14 +24,14 @@
 
 %namespace SimpleParser
 
-%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT VAR COLON COMMA RETURN GT LT EQ NEQ GET LET AND OR NOT IF ELSE WHILE DO
+%token BEGIN END CYCLE ASSIGN SEMICOLON PLUS MINUS LEFT_BRACKET RIGHT_BRACKET DIV MULT VAR COLON COMMA RETURN GT LT EQ NEQ GET LET AND OR NOT IF ELSE WHILE DO FOR
 %token <iVal> INUM 
 %token <dVal> DNUM 
 %token <bVal> BVAL
 %token <sVal> ID
 
 %type <eVal> expr ident term factor function fun_list fun_call b_expr b_term b_factor not_factor relation
-%type <stVal> assign statement decl return cond proc while_cycle do_while_cycle do_while_cycle
+%type <stVal> assign statement decl return cond proc_call while_cycle do_while_cycle do_while_cycle for_cycle for_initializer for_statement 
 %type <blVal> stlist block
 %type <fHead> fun_header
 %type <args> arguments
@@ -39,15 +39,18 @@
 
 %%
 
-progr    : fun_list { root = $1 as MainProgramNode; }
-		 ;
+progr
+    : fun_list { root = $1 as MainProgramNode; }
+	;
 
-fun_list : function { $$ = new MainProgramNode($1 as FunNode); }
-		 | fun_list function { ($1 as MainProgramNode).Add($2 as FunNode); $$ = $1; }
-		 ;
+fun_list
+    : function { $$ = new MainProgramNode($1 as FunNode); }
+	| fun_list function { ($1 as MainProgramNode).Add($2 as FunNode); $$ = $1; }
+	;
 
-function : fun_header block { $$ = new FunNode($1, $2); }
-		 ;
+function
+    : fun_header block { $$ = new FunNode($1, $2); }
+	;
 
 fun_header: ID ID LEFT_BRACKET arguments RIGHT_BRACKET { $$ = new FunHeader($1, $2, $4); }
 		  | ID ID LEFT_BRACKET RIGHT_BRACKET { $$ = new FunHeader($1, $2, null); }
@@ -75,21 +78,24 @@ stlist	 : statement
 			}
 		 ;
 
-statement: assign           { $$ = $1; }
-		| cond				{ $$ = $1; }
-		| decl				{ $$ = $1; }
+statement: assign SEMICOLON         { $$ = $1; }
+		| cond 			{ $$ = $1; }
+		| decl SEMICOLON				{ $$ = $1; }
 		| block				{ $$ = $1; }
-		| return            { $$ = $1; }
-		| proc				{ $$ = $1; }
+		| return SEMICOLON           { $$ = $1; }
+		| proc_call SEMICOLON		    { $$ = $1; }
 		| while_cycle		{ $$ = $1; }
-		| do_while_cycle	{ $$ = $1; }
+		| do_while_cycle SEMICOLON	{ $$ = $1; }
+        | for_cycle         { $$ = $1; }
 		| SEMICOLON         { $$ = null; }
 		;
 
-proc	: fun_call SEMICOLON { $$ = new ProcCallNode($1 as FunCallNode); }
-		;
+proc_call
+    : fun_call { $$ = new ProcCallNode($1 as FunCallNode); }
+    ;
 
-decl	: ID ID SEMICOLON { $$ = new DeclNode($1, $2); }
+decl	: ID ID { $$ = new DeclNode($1, $2); }
+		| ID assign { $$ = new DeclNode($1, $2 as AssignNode); }
 		;
 
 fun_call: ID LEFT_BRACKET expr_list RIGHT_BRACKET { $$ = new FunCallNode($1, $3); }
@@ -108,7 +114,7 @@ expr_list: b_expr { $$ = new List<ExprNode>();
 ident 	: ID { $$ = new IdNode($1); }	
 		;
 	
-assign 	: ident ASSIGN b_expr SEMICOLON { $$ = new AssignNode($1 as IdNode, $3); }
+assign 	: ident ASSIGN b_expr { $$ = new AssignNode($1 as IdNode, $3); }
 		;
 
 cond	: IF LEFT_BRACKET b_expr RIGHT_BRACKET statement ELSE statement { $$ = new CondNode($3, $5, $7); }
@@ -163,11 +169,28 @@ block	: BEGIN	stlist END { $$ = $2; }
 while_cycle: WHILE LEFT_BRACKET b_expr RIGHT_BRACKET statement { $$ = new WhileNode($3, $5); }
 		   ;
 
-do_while_cycle: DO statement WHILE LEFT_BRACKET b_expr RIGHT_BRACKET SEMICOLON { $$ = new DoWhileNode($5, $2); }
+do_while_cycle: DO statement WHILE LEFT_BRACKET b_expr RIGHT_BRACKET { $$ = new DoWhileNode($5, $2); }
 			  ;
 
-return  : RETURN b_expr SEMICOLON { $$ = new ReturnNode($2); }
-		| RETURN SEMICOLON        { $$ = new ReturnNode(); }
+for_cycle     
+    : FOR LEFT_BRACKET for_initializer SEMICOLON b_expr SEMICOLON for_statement RIGHT_BRACKET statement
+        {
+            $$ = new ForNode($3, $5, $7, $9);
+        }
+    ;
+
+for_initializer
+    : decl   { $$ = $1; }
+    | assign { $$ = $1; }
+    ;
+
+for_statement
+    : assign    { $$ = $1; }
+    | proc_call { $$ = $1; }
+    ;
+
+return  : RETURN b_expr { $$ = new ReturnNode($2); }
+		| RETURN        { $$ = new ReturnNode(); }
 		;
 %%
 

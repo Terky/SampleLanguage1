@@ -95,6 +95,7 @@ class ScannerHelper
 	keywords.Add("else", (int)Tokens.ELSE);
 	keywords.Add("while", (int)Tokens.WHILE);
 	keywords.Add("do", (int)Tokens.DO);
+    keywords.Add("for", (int)Tokens.FOR);
   }
   public static int GetIDToken(string s)
   {

@@ -3,20 +3,23 @@ int succ(int n) {
 }
 
 void doAll() {
- int k;
- k = 0;
+ int k = 0;
  do {
    k = k + 1;
    if(k == 5) {
      return;
    }
  } while (k < 0);
+
+ for (int i = 0; i < 5; i = i+1) 
+   int r = i;
+ i = i+1;
  return;
 }
 
 int main() {
-  int k;
-  k = 3;
+  int k = 3;
   succ(k);
   doAll();
+  k = k + 0.6;
 }

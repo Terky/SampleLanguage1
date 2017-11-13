@@ -175,7 +175,7 @@ namespace ProgramTree
             {
                 if (leftValue.Type == Symbol.ValueType.INT && rightValue.Type == Symbol.ValueType.DOUBLE)
                 {
-                    ParserHelper.upCast(leftValue, Symbol.ValueType.DOUBLE);
+                    leftValue = ParserHelper.upCast(leftValue, Symbol.ValueType.DOUBLE);
                 } else if (leftValue.Type == Symbol.ValueType.DOUBLE && rightValue.Type == Symbol.ValueType.INT)
                 {
                     ParserHelper.upCast(rightValue, Symbol.ValueType.DOUBLE);
@@ -480,20 +480,19 @@ namespace ProgramTree
             Expr = expr;
             AssOp = assop;
         }
+
         public override void Exec()
         {
-            VarSymbol s = ParserHelper.TopTable().Get(Id.Name) as VarSymbol;
-            if (s == null)
-            { // Возможно недостижимый код
-                throw new SemanticExepction("How do you get here?");
-            }
+            VarSymbol leftValue = ParserHelper.TopTable().Get(Id.Name) as VarSymbol;
             VarSymbol exprVal = Expr.Eval();
-            if (s.Type != exprVal.Type)
+            if (leftValue.Type != exprVal.Type)
             {
-                throw new SemanticExepction("Несовместимые по присваиванию типы: " + s.Type + " и " + exprVal.Type);
+                throw new SemanticExepction("Incompatible assign types: " + 
+                    leftValue.Type + " and " + exprVal.Type);
             }
-			s.Value = exprVal.Value;
-            Console.WriteLine("{0} := int: {1}, double: {2}, bool: {3}", Id.Name, s.Value.iValue, s.Value.dValue, s.Value.bValue);
+            leftValue.Value = exprVal.Value;
+            Console.WriteLine("{0} := int: {1}, double: {2}, bool: {3}",
+                Id.Name, leftValue.Value.iValue, leftValue.Value.dValue, leftValue.Value.bValue);
         }
     }
 
@@ -675,33 +674,44 @@ namespace ProgramTree
         }
     }
 
-    public class DeclNode : StatementNode
-    {
+    public class DeclNode : StatementNode {
 
         public string Name { set; get; }
 
         public string Type { set; get; }
 
-        public DeclNode(string type, string name)
-        {
-            if (type == "void")
-            {
-                throw new SemanticExepction("\'void\' cannot be used in this context.");
-            }
+        public AssignNode Assign { get; set; }
+
+        public DeclNode(string type, string name) {
+            voidCheck(type);
             Name = name;
             Type = type;
         }
 
-        public override void Exec()
-        {
+        public DeclNode(string type, AssignNode assign) {
+            voidCheck(type);
+            Type = type;
+            Name = assign.Id.Name;
+            Assign = assign;
+        }
+
+        private void voidCheck(string type) {
+            if (type == "void") {
+                throw new SemanticExepction("\'void\' cannot be used in this context.");
+            }
+        }
+
+        public override void Exec() {
             VarSymbol s = new VarSymbol();
             Symbol t = (ParserHelper.GlobalTable.Get(Type));
-            if (!(t is TypeSymbol))
-            {
-                throw new SemanticExepction("Неверный тип при обьявлении переменной: " + Type);
+            if (!(t is TypeSymbol)) {
+                throw new SemanticExepction("Error type: " + Type);
             }
             s.Type = (t as TypeSymbol).Value;
             ParserHelper.TopTable().Put(Name, s);
+            if (Assign != null) {
+                Assign.Exec();
+            }
         }
     }
 
@@ -804,6 +814,81 @@ namespace ProgramTree
                     throw new SemanticExepction("Несоответствие типов в выражении для цикла do while");
                 }
             } while (expr.Value.bValue);
+            ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
+        }
+    }
+
+    public class ForNode: FStateStatementNode
+    {
+        public StatementNode Init { get; set; }
+
+        public StatementNode Iter { get; set; }
+
+        public ExprNode Cond { get; set; }
+
+        public StatementNode Stat { get; set; }
+
+        public ForNode(StatementNode init, ExprNode cond, StatementNode iter, StatementNode stat)
+        {
+            if (!(init is DeclNode || init is AssignNode))
+            {
+                throw new SemanticExepction("Invalid initialization section in \'for\' cycle");
+            }
+            Init = init;
+            Cond = cond;
+            if (!(iter is ProcCallNode || iter is AssignNode))
+            {
+                throw new SemanticExepction("Invalid iteration section in \'for\' cycle");
+            }
+            Iter = iter;
+            Stat = stat;
+        }
+
+        public override void Exec()
+        {
+            ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
+            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
+            Init.Exec();
+            VarSymbol init_var = null;
+            if (Init is DeclNode)
+            {
+                init_var = ParserHelper.TopTable().Get((Init as DeclNode).Name) as VarSymbol;
+                 
+            } else
+            {
+                init_var = ParserHelper.TopTable().Get((Init as AssignNode).Id.Name) as VarSymbol;
+            }
+            VarSymbol cond_val = Cond.Eval();
+            if (cond_val.Type != Symbol.ValueType.BOOL)
+            {
+                throw new SemanticExepction("Invalid condition expression in \'for\' cycle");
+            }
+            while (cond_val.Value.bValue)
+            {
+                bool isBlock = Stat is BlockNode;
+                if (!isBlock)
+                {
+                    ParserHelper.Stack.Peek().SavedTable = ParserHelper.TopTable();
+                    ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
+                }
+                Stat.Exec();
+                if (Stat is FStateStatementNode &&
+                    (Stat as FStateStatementNode).FState == FinalState.RETURN)
+                {
+                    FState = FinalState.RETURN;
+                    if (!isBlock)
+                    {
+                        ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
+                    }
+                    break;
+                }
+                Iter.Exec();
+                cond_val = Cond.Eval();
+                if (!isBlock)
+                {
+                    ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
+                }
+            }
             ParserHelper.Stack.Peek().TopTable = ParserHelper.SavedTable();
         }
     }
