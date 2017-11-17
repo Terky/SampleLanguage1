@@ -72,8 +72,9 @@ namespace ProgramTree
         }
     }
 
-    public class Node // базовый класс для всех узлов    
+    public abstract class Node // базовый класс для всех узлов    
     {
+        public abstract void Visit(Visitor v);
     }
 
     public class MainProgramNode : ExprNode
@@ -96,6 +97,11 @@ namespace ProgramTree
             VarSymbol result = FunList[FunList.Count - 1].Eval();
             ParserHelper.Stack.Pop();
             return result;
+        }
+
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
         }
     }
 
@@ -123,6 +129,11 @@ namespace ProgramTree
             }
             return result;
         }
+
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
+        }
     }
 
     public abstract class ExprNode : Node // базовый класс для всех выражений
@@ -149,6 +160,11 @@ namespace ProgramTree
             }
             Value = s;
             return Value;
+        }
+
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
         }
     }
 
@@ -367,6 +383,11 @@ namespace ProgramTree
             return res;
         }
 
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
+        }
+
     }
 
     public class UnExprNode : ExprNode
@@ -398,6 +419,11 @@ namespace ProgramTree
                     throw new SemanticExepction("Недопустимый унарный оператор");
             }
         }
+
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
+        }
     }
 
     public class IntNumNode : ExprNode
@@ -410,6 +436,11 @@ namespace ProgramTree
             value.Type = Symbol.ValueType.INT;
             value.Value.iValue = Num;
             return value;
+        }
+
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
         }
     }
 
@@ -424,6 +455,11 @@ namespace ProgramTree
             value.Value.dValue = Num;
             return value;
         }
+
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
+        }
     }
 
     public class BoolNode : ExprNode
@@ -436,6 +472,11 @@ namespace ProgramTree
             value.Type = Symbol.ValueType.BOOL;
             value.Value.bValue = Val;
             return value;
+        }
+
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
         }
     }
 
@@ -494,6 +535,11 @@ namespace ProgramTree
             Console.WriteLine("{0} := int: {1}, double: {2}, bool: {3}",
                 Id.Name, leftValue.Value.iValue, leftValue.Value.dValue, leftValue.Value.bValue);
         }
+
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
+        }
     }
 
     public class CondNode : FStateStatementNode
@@ -543,37 +589,10 @@ namespace ProgramTree
             }
             ParserHelper.Stack.Peek().TopTable = savedTable;
         }
-    }
 
-    public class CycleNode : FStateStatementNode
-    {
-        public ExprNode Expr { get; set; }
-        public StatementNode Stat { get; set; }
-        public CycleNode(ExprNode expr, StatementNode stat)
+        public override void Visit(Visitor v)
         {
-            Expr = expr;
-            Stat = stat;
-        }
-        public override void Exec()
-        {
-            var savedTable = ParserHelper.TopTable();
-            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
-            VarSymbol val = Expr.Eval();
-            if (val.Type != Symbol.ValueType.INT)
-            {
-                throw new SemanticExepction("Неверный тип в выражении для 'cycle'");
-            }
-            for (int i = 0; i < val.Value.iValue; ++i)
-            {
-                Stat.Exec();
-                if (Stat is FStateStatementNode &&
-                    (Stat as FStateStatementNode).FState == FinalState.RETURN)
-                {
-                    FState = FinalState.RETURN;
-                    break;
-                }
-            }
-            ParserHelper.Stack.Peek().TopTable = savedTable;
+            v.Visit(this);
         }
     }
 
@@ -611,6 +630,11 @@ namespace ProgramTree
             ParserHelper.Stack.Peek().TopTable = savedTable;
         }
 
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
+        }
+
     }
 
     public class ProcCallNode : StatementNode
@@ -625,6 +649,11 @@ namespace ProgramTree
         public override void Exec()
         {
             FunCall.Eval();
+        }
+
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
         }
     }
 
@@ -672,6 +701,11 @@ namespace ProgramTree
             ParserHelper.Stack.Pop();
             return Value;
         }
+
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
+        }
     }
 
     public class DeclNode : StatementNode {
@@ -713,6 +747,11 @@ namespace ProgramTree
                 Assign.Exec();
             }
         }
+
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
+        }
     }
 
     public class ReturnNode : FStateStatementNode
@@ -741,6 +780,11 @@ namespace ProgramTree
             VarSymbol result = ParserHelper.BottomTable().Get(SymbolTable.RESULT) as VarSymbol;
             result.Type = value.Type;
             result.Value = value.Value;
+        }
+
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
         }
     }
 
@@ -779,6 +823,11 @@ namespace ProgramTree
             }
             ParserHelper.Stack.Peek().TopTable = savedTable;
         }
+
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
+        }
     }
 
     public class DoWhileNode : FStateStatementNode
@@ -816,6 +865,11 @@ namespace ProgramTree
                 }
             } while (expr.Value.bValue);
             ParserHelper.Stack.Peek().TopTable = savedTable;
+        }
+
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
         }
     }
 
@@ -878,6 +932,11 @@ namespace ProgramTree
                 cond_val = Cond.Eval();
             }
             ParserHelper.Stack.Peek().TopTable = savedTable;
+        }
+
+        public override void Visit(Visitor v)
+        {
+            v.Visit(this);
         }
     }
 }

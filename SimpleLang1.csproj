@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AutoVisitor.cs" />
     <Compile Include="FunSymbol.cs" />
     <Compile Include="Symbol.cs" />
     <Compile Include="SymbolsRecord.cs" />
@@ -56,6 +57,7 @@
     <Compile Include="SimpleYacc.cs" />
     <Compile Include="TypeSymbol.cs" />
     <Compile Include="VarSymbol.cs" />
+    <Compile Include="Visitor.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
