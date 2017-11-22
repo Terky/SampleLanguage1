@@ -16,6 +16,11 @@ namespace SimpleParser
     {
         public SemanticExepction(string msg) : base(msg) { }
     }
+    public class IncompatibleTypesException: Exception
+    {
+        public IncompatibleTypesException(string msg) : base(msg) { }
+    }
+
     // Класс глобальных описаний и статических методов
     // для использования различными подсистемами парсера и сканера
     public static class ParserHelper

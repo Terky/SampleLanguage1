@@ -91,14 +91,6 @@ namespace ProgramTree
             FunList.Add(fun);
         }
 
-        public override VarSymbol Eval()
-        {
-            ParserHelper.Stack.Push(new SymbolsRecord());
-            VarSymbol result = FunList[FunList.Count - 1].Eval();
-            ParserHelper.Stack.Pop();
-            return result;
-        }
-
         public override void Visit(Visitor v)
         {
             v.Visit(this);
@@ -392,9 +384,9 @@ namespace ProgramTree
 
     public class UnExprNode : ExprNode
     {
-        ExprNode Expr { get; set; }
+        public ExprNode Expr { get; set; }
 
-        OpType Op { get; set; }
+        public OpType Op { get; set; }
 
         public UnExprNode(ExprNode expr, OpType op)
         {
@@ -526,11 +518,7 @@ namespace ProgramTree
         {
             VarSymbol leftValue = ParserHelper.TopTable().Get(Id.Name) as VarSymbol;
             VarSymbol exprVal = Expr.Eval();
-            if (leftValue.Type != exprVal.Type)
-            {
-                throw new SemanticExepction("Incompatible assign types: " + 
-                    leftValue.Type + " and " + exprVal.Type);
-            }
+            
             leftValue.Value = exprVal.Value;
             Console.WriteLine("{0} := int: {1}, double: {2}, bool: {3}",
                 Id.Name, leftValue.Value.iValue, leftValue.Value.dValue, leftValue.Value.bValue);
@@ -544,11 +532,11 @@ namespace ProgramTree
 
     public class CondNode : FStateStatementNode
     {
-        ExprNode Expr { get; set; }
+        public ExprNode Expr { get; set; }
 
-        StatementNode StatIf { get; set; }
+        public StatementNode StatIf { get; set; }
 
-        StatementNode StatElse { get; set; }
+        public StatementNode StatElse { get; set; }
 
         public CondNode(ExprNode expr, StatementNode statIf, StatementNode statElse)
         {
@@ -639,7 +627,7 @@ namespace ProgramTree
 
     public class ProcCallNode : StatementNode
     {
-        private FunCallNode FunCall { get; set; }
+        public FunCallNode FunCall { get; set; }
 
         public ProcCallNode(FunCallNode funCall)
         {
@@ -712,36 +700,34 @@ namespace ProgramTree
 
         public string Name { set; get; }
 
-        public string Type { set; get; }
+        public Symbol.ValueType Type { set; get; }
 
         public AssignNode Assign { get; set; }
 
         public DeclNode(string type, string name) {
-            voidCheck(type);
+            InitType(type);
             Name = name;
-            Type = type;
         }
 
         public DeclNode(string type, AssignNode assign) {
-            voidCheck(type);
-            Type = type;
+            InitType(type);
             Name = assign.Id.Name;
             Assign = assign;
         }
 
-        private void voidCheck(string type) {
-            if (type == "void") {
-                throw new SemanticExepction("\'void\' cannot be used in this context.");
+        private void InitType(string type)
+        {
+            Symbol sym = ParserHelper.GlobalTable.Get(type);
+            if (!(sym is TypeSymbol))
+            {
+                throw new SemanticExepction("Error type: " + Type);
             }
+            Type = (sym as TypeSymbol).Value;
         }
 
         public override void Exec() {
             VarSymbol s = new VarSymbol();
-            Symbol t = (ParserHelper.GlobalTable.Get(Type));
-            if (!(t is TypeSymbol)) {
-                throw new SemanticExepction("Error type: " + Type);
-            }
-            s.Type = (t as TypeSymbol).Value;
+            s.Type = Type;
             ParserHelper.TopTable().Put(Name, s);
             if (Assign != null) {
                 Assign.Exec();

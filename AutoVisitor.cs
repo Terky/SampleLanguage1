@@ -17,14 +17,14 @@ namespace SimpleLang
         public override void Visit(BinExprNode node)
         {
             node.Left.Visit(this);
+            node.Right.Visit(this);
         }
 
-        public override void Visit(BlockNode node)
+        
+
+        public override void Visit(DeclNode node)
         {
-            foreach(StatementNode st in node.StList)
-            {
-                st.Visit(this);
-            }
+            node.Assign.Visit(this);
         }
     }
 }

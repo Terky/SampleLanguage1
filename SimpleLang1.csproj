@@ -44,7 +44,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutoVisitor.cs" />
+    <Compile Include="ExecutionVisitor.cs" />
     <Compile Include="FunSymbol.cs" />
+    <Compile Include="Returner.cs" />
+    <Compile Include="StaticTypeCheckVisitor.cs" />
     <Compile Include="Symbol.cs" />
     <Compile Include="SymbolsRecord.cs" />
     <Compile Include="SymbolTable.cs" />
