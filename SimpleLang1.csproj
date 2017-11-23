@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutoVisitor.cs" />
+    <Compile Include="BinExprExecutionHelper.cs" />
     <Compile Include="ExecutionVisitor.cs" />
     <Compile Include="FunSymbol.cs" />
     <Compile Include="Returner.cs" />

@@ -11,12 +11,16 @@ namespace SimpleLang
     {
         public Returner returner { get; set; }
 
+        public StaticTypeCheckVisitor()
+        {
+            returner = new Returner();
+        }
+
         public override void Visit(MainProgramNode node)
         {
             foreach (FunNode fun in node.FunList)
             {
                 FunSymbol funSym = new FunSymbol(fun.Header.Type, fun);
-                ParserHelper.GlobalTable.Put(fun.Header.Name, funSym);
 
                 ParserHelper.Stack.Push(new SymbolsRecord());
                 fun.Visit(this);
@@ -41,8 +45,15 @@ namespace SimpleLang
                     hasReturn = true;
                     Symbol.ValueType funType = node.Header.Type;
                     ExprNode returnExpr = (stat as ReturnNode).Expr;
-                    returnExpr.Visit(this);
-                    Symbol.ValueType returnType = returner.Value.Type;
+                    Symbol.ValueType returnType;
+                    if (returnExpr != null)
+                    {
+                        returnExpr.Visit(this);
+                        returnType = returner.Value.Type;
+                    } else
+                    {
+                        returnType = Symbol.ValueType.VOID;
+                    }
                     if (funType != returnType)
                     {
                         throw new IncompatibleTypesException("Несоответствие возвращаемого и указанного типа в функции " + node.Header.Name);
@@ -100,7 +111,10 @@ namespace SimpleLang
                     exprType + " к BOOL");
             }
             node.StatIf.Visit(this);
-            node.StatElse.Visit(this);
+            if (node.StatElse != null)
+            {
+                node.StatElse.Visit(this);
+            }
 
             ParserHelper.Stack.Peek().TopTable = savedTable;
         }
@@ -128,29 +142,29 @@ namespace SimpleLang
             }
             else
             {
-                returner.Value.Type = Symbol.ValueType.VOID;
+                returner.Value = new VarSymbol(Symbol.ValueType.VOID);
             }
         }
 
         public override void Visit(BoolNode node)
         {
-            returner.Value.Type = Symbol.ValueType.BOOL;
+            returner.Value = new VarSymbol(Symbol.ValueType.BOOL);
         }
 
         public override void Visit(DoubleNumNode node)
         {
-            returner.Value.Type = Symbol.ValueType.DOUBLE;
+            returner.Value = new VarSymbol(Symbol.ValueType.DOUBLE);
         }
 
         public override void Visit(IntNumNode node)
         {
-            returner.Value.Type = Symbol.ValueType.INT;
+            returner.Value = new VarSymbol(Symbol.ValueType.INT);
         }
 
         public override void Visit(IdNode node)
         {
             VarSymbol sym = ParserHelper.TopTable().Get(node.Name) as VarSymbol;
-            returner.Value.Type = sym.Type;
+            returner.Value = new VarSymbol(sym.Type);
         }
 
         public override void Visit(UnExprNode node)
@@ -164,7 +178,7 @@ namespace SimpleLang
                     {
                         throw new IncompatibleTypesException("Несоответствие типов, оператор !");
                     }
-                    returner.Value.Type = Symbol.ValueType.BOOL;
+                    returner.Value = new VarSymbol(Symbol.ValueType.BOOL);
                     break;
                 default:
                     break;
@@ -282,7 +296,7 @@ namespace SimpleLang
                     {
                         throw new SemanticExepction("Оператор " + node.Op.ToString() + " применяется к неподходящим типам");
                     }
-                    returner.Value.Type = leftType;
+                    returner.Value = new VarSymbol(leftType);
                     break;
                 case OpType.Gt:
                 case OpType.Lt:
@@ -292,7 +306,7 @@ namespace SimpleLang
                     {
                         throw new SemanticExepction("Оператор " + node.Op.ToString() + " применяется к неподходящим типам");
                     }
-                    returner.Value.Type = Symbol.ValueType.BOOL;
+                    returner.Value = new VarSymbol(Symbol.ValueType.BOOL);
                     break;
                 case OpType.Eq:
                 case OpType.Neq:
@@ -300,7 +314,7 @@ namespace SimpleLang
                     {
                         throw new SemanticExepction("Оператор " + node.Op.ToString() + " применяется к неподходящим типам");
                     }
-                    returner.Value.Type = Symbol.ValueType.BOOL;
+                    returner.Value = new VarSymbol(Symbol.ValueType.BOOL);
                     break;
                 case OpType.Or:
                 case OpType.And:
@@ -308,7 +322,7 @@ namespace SimpleLang
                     {
                         throw new SemanticExepction("Оператор " + node.Op.ToString() + " применяется к неподходящим типам");
                     }
-                    returner.Value.Type = Symbol.ValueType.BOOL;
+                    returner.Value = new VarSymbol(Symbol.ValueType.BOOL);
                     break;
                 default:
                     break;

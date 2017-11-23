@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using SimpleScanner;
 using SimpleParser;
+using SimpleLang;
 
 namespace SimpleCompiler
 {
@@ -10,7 +11,7 @@ namespace SimpleCompiler
     {
         public static void Main()
         {
-            string FileName = @"..\..\d.txt";
+            string FileName = @"..\..\fib.txt";
             try
             {
                 string Text = File.ReadAllText(FileName);
@@ -29,7 +30,8 @@ namespace SimpleCompiler
                     //foreach (var st in parser.root.StList)
                     //Console.WriteLine(st);
                 }
-                parser.root.Eval();
+                parser.root.Visit(new StaticTypeCheckVisitor());
+                parser.root.Visit(new ExecutionVisitor());
             }
             catch (FileNotFoundException)
             {
@@ -47,7 +49,10 @@ namespace SimpleCompiler
             {
                 Console.WriteLine("Semantic error. " + e.Message);
             }
-
+            catch (IncompatibleTypesException e)
+            {
+                Console.WriteLine("Incompatible types " + e.Message);
+            }
             Console.ReadLine();
         }
 
