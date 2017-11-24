@@ -30,7 +30,7 @@ namespace SimpleLang
 
         public override void Visit(FunNode node)
         {
-            var args = node.Header.Args.ArgList;
+            var args = node.Header.Args.FormalParamList;
             foreach (var arg in args)
             {
                 VarSymbol sym = new VarSymbol();
@@ -193,8 +193,8 @@ namespace SimpleLang
                 throw new SemanticExepction(node.Name + " не является именем функции");
             }
             FunSymbol fun = sym as FunSymbol;
-            Arguments args = fun.Address.Header.Args;
-            if (args.ArgList.Count != node.ExprList.Count)
+            FormalParams args = fun.Address.Header.Args;
+            if (args.FormalParamList.Count != node.ExprList.Count)
             {
                 throw new SemanticExepction("Неверное количество параметров при вызове функции " + node.Name);
             }
@@ -204,11 +204,11 @@ namespace SimpleLang
                 expr.Visit(this);
                 argsType.Add(returner.Value.Type);
             }
-            for (int i = 0; i < args.ArgList.Count; ++i)
+            for (int i = 0; i < args.FormalParamList.Count; ++i)
             {
-                if (argsType[i] != args.ArgList[i].Type)
+                if (argsType[i] != args.FormalParamList[i].Type)
                 {
-                    throw new IncompatibleTypesException("Несоответствие типов в параметре " + args.ArgList[i].Name + " функции " + node.Name);
+                    throw new IncompatibleTypesException("Несоответствие типов в параметре " + args.FormalParamList[i].Name + " функции " + node.Name);
                 }
             }
         }

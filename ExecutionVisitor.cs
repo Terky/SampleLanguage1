@@ -228,7 +228,7 @@ namespace SimpleLang
         public override void Visit(FunCallNode node)
         {
             FunSymbol fun = ParserHelper.GlobalTable.Get(node.Name) as FunSymbol;
-            Arguments args = fun.Address.Header.Args;
+            FormalParams args = fun.Address.Header.Args;
             List<VarSymbol> callArgs = new List<VarSymbol>();
             foreach (ExprNode expr in node.ExprList)
             {
@@ -237,9 +237,9 @@ namespace SimpleLang
             }
 
             ParserHelper.Stack.Push(new SymbolsRecord());
-            for (int i = 0; i < args.ArgList.Count; ++i)
+            for (int i = 0; i < args.FormalParamList.Count; ++i)
             {
-                ParserHelper.TopTable().Put(args.ArgList[i].Name, callArgs[i]);
+                ParserHelper.TopTable().Put(args.FormalParamList[i].Name, callArgs[i]);
             }
             fun.Address.Visit(this);
             ParserHelper.Stack.Pop();

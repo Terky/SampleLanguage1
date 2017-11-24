@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using SimpleLang;
 using SimpleParser;
+using QUT.Gppg;
 
 namespace ProgramTree
 {
@@ -15,13 +16,13 @@ namespace ProgramTree
 
         public string Name { get; set; }
 
-        public Arguments Args { get; set; }
+        public FormalParams Args { get; set; }
 
-        public FunHeader(string type, string name, Arguments args)
+        public FunHeader(string type, string name, FormalParams args)
         {
             if (args == null)
             {
-                args = new Arguments();
+                args = new FormalParams();
             }
             Name = name;
             Symbol t = ParserHelper.GlobalTable.Get(type);
@@ -34,41 +35,61 @@ namespace ProgramTree
         }
     }
    
-    public class Arguments
+    public class FormalParams
     {
-        public class Argument
+        public class FormalParam
         {
             public Symbol.ValueType Type { get; set; }
 
-            public string Name { get; set; }
+            public DeclId Name { get; set; }
 
-            public Argument(string type, string name)
+            public FormalParam(DeclType type, DeclId name)
             {
-                Symbol t = ParserHelper.GlobalTable.Get(type);
-                if (!(t is TypeSymbol) || (t as TypeSymbol).Value == Symbol.ValueType.VOID)
-                {
-                    throw new SemanticExepction("Недопустимый тип аргумента " + Type + Name);
-                }
-                Type = (t as TypeSymbol).Value;
+                Type = type.Type;
                 Name = name;
             }
         }
 
-        public List<Argument> ArgList = new List<Argument>();
+        public List<FormalParam> FormalParamList = new List<FormalParam>();
 
-        public Arguments(string type, string name)
+        public FormalParams(DeclType type, DeclId name)
         {
-            ArgList.Add(new Argument(type, name));
+            FormalParamList.Add(new FormalParam(type, name));
         }
 
-        public Arguments()
+        public FormalParams()
         {
 
         }
 
-        public void Add(string type, string name)
+        public void Add(DeclType type, DeclId name)
         {
-            ArgList.Add(new Argument(type, name));
+            FormalParamList.Add(new FormalParam(type, name));
+        }
+    }
+
+    public class DeclType
+    {
+        public Symbol.ValueType Type { get; set; }
+
+        public DeclType(string type, LexLocation loc)
+        {
+            Symbol t = ParserHelper.GlobalTable.Get(type);
+            if (!(t is TypeSymbol) || (t as TypeSymbol).Value == Symbol.ValueType.VOID)
+            {
+                throw new SemanticExepction("Недопустимый тип аргумента " + Type);
+            }
+            Type = (t as TypeSymbol).Value;
+        }
+    }
+
+    public class DeclId
+    {
+        public string Name { get; set; }
+
+        public DeclId(string name, LexLocation loc)
+        {
+            Name = name;
         }
     }
 

@@ -16,7 +16,9 @@
 			public StatementNode stVal;
 			public BlockNode blVal;
 			public FunHeader fHead;
-			public Arguments args;
+            public DeclId declId;
+            public DeclType declType;
+			public FormalPaparms formParams;
 			public List<ExprNode> eList;
        }
 
@@ -34,8 +36,10 @@
 %type <stVal> assign statement decl return cond proc_call while_cycle do_while_cycle do_while_cycle for_cycle for_initializer for_statement 
 %type <blVal> stlist block
 %type <fHead> fun_header
-%type <args> arguments
+%type <formParams> formal_params
 %type <eList> expr_list
+%type <declId> decl_id
+%type <declType> type
 
 %%
 
@@ -52,125 +56,158 @@ function
     : fun_header block { $$ = new FunNode($1, $2); }
 	;
 
-fun_header: ID ID LEFT_BRACKET arguments RIGHT_BRACKET { $$ = new FunHeader($1, $2, $4); }
-		  | ID ID LEFT_BRACKET RIGHT_BRACKET { $$ = new FunHeader($1, $2, null); }
-		  ;
+decl_id
+    : ID { $$ = new DeclIdNode($1, @1); }
+    ;
 
-arguments: ID ID { $$ = new Arguments($1, $2); }
-		 | arguments COMMA ID ID  
-			{
-			  $1.Add($3,$4);
-			  $$ = $1; 
-			}
-		 ;
+fun_header
+    : type decl_id LEFT_BRACKET formal_params RIGHT_BRACKET { $$ = new FunHeader($1, $2, $4); }
+    ;
 
-stlist	 : statement 
-			{ 
-				$$ = new BlockNode($1); 
-			}
-		 | stlist statement 
-			{ 
-				if ($2 != null)
-				{
-					$1.Add($2);
-			    }
-				$$ = $1; 
-			}
-		 ;
+formal_params
+    : formal_params_fill { $$ = $1; }
+    |
+    ;
 
-statement: assign SEMICOLON         { $$ = $1; }
-		| cond 			{ $$ = $1; }
-		| decl SEMICOLON				{ $$ = $1; }
-		| block				{ $$ = $1; }
-		| return SEMICOLON           { $$ = $1; }
-		| proc_call SEMICOLON		    { $$ = $1; }
-		| while_cycle		{ $$ = $1; }
-		| do_while_cycle SEMICOLON	{ $$ = $1; }
-        | for_cycle         { $$ = $1; }
-		| SEMICOLON         { $$ = null; }
-		;
+formal_params_fill
+    : type decl_id { $$ = new FormalParams($1, $2); }
+	| formal_params_fill COMMA type decl_id  
+	    {
+		    $1.Add($3,$4);
+			$$ = $1; 
+		}
+	;
+
+stlist
+    : statement { $$ = new BlockNode($1); }
+	| stlist statement 
+	    { 
+		    if ($2 != null)
+            {
+			    $1.Add($2);
+            }
+			$$ = $1; 
+		}
+	;
+
+statement
+    : assign SEMICOLON         { $$ = $1; }
+	| cond                     { $$ = $1; }
+	| decl SEMICOLON		   { $$ = $1; }
+	| block				       { $$ = $1; }
+	| return SEMICOLON         { $$ = $1; }
+	| proc_call SEMICOLON	   { $$ = $1; }
+	| while_cycle		       { $$ = $1; }
+	| do_while_cycle SEMICOLON { $$ = $1; }
+    | for_cycle                { $$ = $1; }
+	| SEMICOLON                { $$ = null; }
+    ;
 
 proc_call
     : fun_call { $$ = new ProcCallNode($1 as FunCallNode); }
     ;
 
-decl	: ID ID { $$ = new DeclNode($1, $2); }
-		| ID assign { $$ = new DeclNode($1, $2 as AssignNode); }
-		;
+decl
+    : ID ID { $$ = new DeclNode($1, $2); }
+	| ID assign { $$ = new DeclNode($1, $2 as AssignNode); }
+	;
 
-fun_call: ID LEFT_BRACKET expr_list RIGHT_BRACKET { $$ = new FunCallNode($1, $3); }
-		| ID LEFT_BRACKET RIGHT_BRACKET { $$ = new FunCallNode($1); }
-		;
+fun_call
+    : ID LEFT_BRACKET expr_list RIGHT_BRACKET { $$ = new FunCallNode($1, $3); }
+	| ID LEFT_BRACKET RIGHT_BRACKET { $$ = new FunCallNode($1); }
+	;
 
-expr_list: b_expr { $$ = new List<ExprNode>();
-					$$.Add($1); }
-		 | expr_list COMMA b_expr 
-			{
-			  $1.Add($3);
-			  $$ = $1; 
-			}
-		 ;
+expr_list
+    : b_expr
+        {
+            $$ = new List<ExprNode>();
+		    $$.Add($1);
+        }
+	| expr_list COMMA b_expr 
+		{
+		    $1.Add($3);
+			$$ = $1; 
+		}
+	;
 
-ident 	: ID { $$ = new IdNode($1); }	
-		;
+ident
+    : ID { $$ = new IdNode($1); }	
+	;
+
+type
+    : ID { $$ = new TypeNode($1, @1); }
+    ;
 	
-assign 	: ident ASSIGN b_expr { $$ = new AssignNode($1 as IdNode, $3); }
-		;
+assign
+    : ident ASSIGN b_expr { $$ = new AssignNode($1 as IdNode, $3); }
+	;
 
-cond	: IF LEFT_BRACKET b_expr RIGHT_BRACKET statement ELSE statement { $$ = new CondNode($3, $5, $7); }
-		| IF LEFT_BRACKET b_expr RIGHT_BRACKET statement { $$ = new CondNode($3, $5, null); }
-		;
+cond
+    : IF LEFT_BRACKET b_expr RIGHT_BRACKET statement ELSE statement { $$ = new CondNode($3, $5, $7); }
+	| IF LEFT_BRACKET b_expr RIGHT_BRACKET statement { $$ = new CondNode($3, $5, null); }
+	;
 
-b_expr	: b_expr OR b_term { $$ = new BinExprNode($1, $3, OpType.Or); }
-		| b_term { $$ = $1; }
-		;
+b_expr
+    : b_expr OR b_term { $$ = new BinExprNode($1, $3, OpType.Or); }
+	| b_term { $$ = $1; }
+	;
 
-b_term	: b_term AND not_factor { $$ = new BinExprNode($1, $3, OpType.And); }
-		| not_factor { $$ = $1; }
-		;
+b_term
+    : b_term AND not_factor { $$ = new BinExprNode($1, $3, OpType.And); }
+	| not_factor { $$ = $1; }
+	;
 
-not_factor: b_factor { $$ = $1; }
-		  | NOT b_factor { $$ = new UnExprNode($2, OpType.Not); }
-		  ;
+not_factor
+    : b_factor { $$ = $1; }
+	| NOT b_factor { $$ = new UnExprNode($2, OpType.Not); }
+	;
 
-b_factor: BVAL { $$ = new BoolNode($1); }
-		| relation { $$ = $1; }
-		;
+b_factor
+    : BVAL { $$ = new BoolNode($1); }
+	| relation { $$ = $1; }
+	;
 
-relation: expr GT expr { $$ = new BinExprNode($1, $3, OpType.Gt); }
-		| expr LT expr { $$ = new BinExprNode($1, $3, OpType.Lt); }
-		| expr LET expr { $$ = new BinExprNode($1, $3, OpType.Let); }
-		| expr GET expr { $$ = new BinExprNode($1, $3, OpType.Get); }
-		| expr EQ expr { $$ = new BinExprNode($1, $3, OpType.Eq); }
-		| expr NEQ expr { $$ = new BinExprNode($1, $3, OpType.Neq); }
-		| expr { $$ = $1; }
-		;
+relation
+    : expr GT expr { $$ = new BinExprNode($1, $3, OpType.Gt); }
+	| expr LT expr { $$ = new BinExprNode($1, $3, OpType.Lt); }
+	| expr LET expr { $$ = new BinExprNode($1, $3, OpType.Let); }
+	| expr GET expr { $$ = new BinExprNode($1, $3, OpType.Get); }
+	| expr EQ expr { $$ = new BinExprNode($1, $3, OpType.Eq); }
+	| expr NEQ expr { $$ = new BinExprNode($1, $3, OpType.Neq); }
+	| expr { $$ = $1; }
+	;
 
-expr	: expr PLUS term { $$ = new BinExprNode($1, $3, OpType.Plus); }
-		| expr MINUS term { $$ = new BinExprNode($1, $3, OpType.Minus); }
-		| term { $$ = $1; }
-		;
+expr
+    : expr PLUS term { $$ = new BinExprNode($1, $3, OpType.Plus); }
+	| expr MINUS term { $$ = new BinExprNode($1, $3, OpType.Minus); }
+	| term { $$ = $1; }
+	;
 
-term    : term MULT factor { $$ = new BinExprNode($1, $3, OpType.Mult); }
-		| term DIV factor { $$ = new BinExprNode($1, $3, OpType.Div); }
-		| factor { $$ = $1; }
-		;
+term
+    : term MULT factor { $$ = new BinExprNode($1, $3, OpType.Mult); }
+	| term DIV factor { $$ = new BinExprNode($1, $3, OpType.Div); }
+	| factor { $$ = $1; }
+	;
 
-factor  : LEFT_BRACKET b_expr RIGHT_BRACKET { $$ = $2; }
-		| ident  { $$ = $1 as IdNode; }
-		| fun_call { $$ = $1 as FunCallNode; }
-		| INUM { $$ = new IntNumNode($1); }
-		| DNUM { $$ = new DoubleNumNode($1); }
-		;
+factor
+    : LEFT_BRACKET b_expr RIGHT_BRACKET { $$ = $2; }
+	| ident  { $$ = $1 as IdNode; }
+	| fun_call { $$ = $1 as FunCallNode; }
+	| INUM { $$ = new IntNumNode($1); }
+	| DNUM { $$ = new DoubleNumNode($1); }
+	;
 
-block	: BEGIN	stlist END { $$ = $2; }
-		;
+block
+    : BEGIN	stlist END { $$ = $2; }
+	;
 
-while_cycle: WHILE LEFT_BRACKET b_expr RIGHT_BRACKET statement { $$ = new WhileNode($3, $5); }
-		   ;
+while_cycle
+    : WHILE LEFT_BRACKET b_expr RIGHT_BRACKET statement { $$ = new WhileNode($3, $5); }
+	;
 
-do_while_cycle: DO statement WHILE LEFT_BRACKET b_expr RIGHT_BRACKET { $$ = new DoWhileNode($5, $2); }
-			  ;
+do_while_cycle
+    : DO statement WHILE LEFT_BRACKET b_expr RIGHT_BRACKET { $$ = new DoWhileNode($5, $2); }
+	;
 
 for_cycle     
     : FOR LEFT_BRACKET for_initializer SEMICOLON b_expr SEMICOLON for_statement RIGHT_BRACKET statement
@@ -189,8 +226,9 @@ for_statement
     | proc_call { $$ = $1; }
     ;
 
-return  : RETURN b_expr { $$ = new ReturnNode($2); }
-		| RETURN        { $$ = new ReturnNode(); }
-		;
+return
+    : RETURN b_expr { $$ = new ReturnNode($2); }
+	| RETURN        { $$ = new ReturnNode(); }
+    ;
 %%
 
