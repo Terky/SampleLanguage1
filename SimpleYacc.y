@@ -18,8 +18,9 @@
 			public FunHeader fHead;
             public DeclId declId;
             public DeclType declType;
-			public FormalPaparms formParams;
+			public FormalParams formParams;
 			public List<ExprNode> eList;
+			public DeclAssign declAssign;
        }
 
 %using ProgramTree;
@@ -32,15 +33,15 @@
 %token <bVal> BVAL
 %token <sVal> ID
 
-%type <eVal> expr ident term factor function fun_list fun_call b_expr b_term b_factor not_factor relation
+%type <eVal> expr ident term factor function fun_list fun_call b_expr b_term b_factor not_factor relation return_expr
 %type <stVal> assign statement decl return cond proc_call while_cycle do_while_cycle do_while_cycle for_cycle for_initializer for_statement 
 %type <blVal> stlist block
 %type <fHead> fun_header
-%type <formParams> formal_params
-%type <eList> expr_list
+%type <formParams> formal_params formal_params_fill
+%type <eList> actual_params actual_params_fill
 %type <declId> decl_id
 %type <declType> type
-
+%type <declAssign> decl_assign
 %%
 
 progr
@@ -48,16 +49,16 @@ progr
 	;
 
 fun_list
-    : function { $$ = new MainProgramNode($1 as FunNode); }
+    : function { $$ = new MainProgramNode($1 as FunNode, @1); }
 	| fun_list function { ($1 as MainProgramNode).Add($2 as FunNode); $$ = $1; }
 	;
 
 function
-    : fun_header block { $$ = new FunNode($1, $2); }
+    : fun_header block { $$ = new FunNode($1, $2, @1); }
 	;
 
 decl_id
-    : ID { $$ = new DeclIdNode($1, @1); }
+    : ID { $$ = new DeclId($1, @1); }
     ;
 
 fun_header
@@ -108,22 +109,30 @@ proc_call
     ;
 
 decl
-    : ID ID { $$ = new DeclNode($1, $2); }
-	| ID assign { $$ = new DeclNode($1, $2 as AssignNode); }
+    : type decl_id decl_assign { $$ = new DeclNode($1, $2, $3); }
+	;
+
+decl_assign
+	: ASSIGN b_expr { $$ = new DeclAssign($2); }
+	|
 	;
 
 fun_call
-    : ID LEFT_BRACKET expr_list RIGHT_BRACKET { $$ = new FunCallNode($1, $3); }
-	| ID LEFT_BRACKET RIGHT_BRACKET { $$ = new FunCallNode($1); }
+    : ID LEFT_BRACKET actual_params RIGHT_BRACKET { $$ = new FunCallNode($1, $3, @1); }
 	;
 
-expr_list
+actual_params
+	: actual_params_fill { $$ = $1; }
+	|					 { $$ = null; }
+	;
+
+actual_params_fill
     : b_expr
         {
             $$ = new List<ExprNode>();
 		    $$.Add($1);
         }
-	| expr_list COMMA b_expr 
+	| actual_params COMMA b_expr 
 		{
 		    $1.Add($3);
 			$$ = $1; 
@@ -131,11 +140,11 @@ expr_list
 	;
 
 ident
-    : ID { $$ = new IdNode($1); }	
+    : ID { $$ = new IdNode($1, @1); }	
 	;
 
 type
-    : ID { $$ = new TypeNode($1, @1); }
+    : ID { $$ = new DeclType($1, @1); }
     ;
 	
 assign
@@ -148,44 +157,44 @@ cond
 	;
 
 b_expr
-    : b_expr OR b_term { $$ = new BinExprNode($1, $3, OpType.Or); }
+    : b_expr OR b_term { $$ = new BinExprNode($1, $3, OpType.Or, @1); }
 	| b_term { $$ = $1; }
 	;
 
 b_term
-    : b_term AND not_factor { $$ = new BinExprNode($1, $3, OpType.And); }
+    : b_term AND not_factor { $$ = new BinExprNode($1, $3, OpType.And, @1); }
 	| not_factor { $$ = $1; }
 	;
 
 not_factor
     : b_factor { $$ = $1; }
-	| NOT b_factor { $$ = new UnExprNode($2, OpType.Not); }
+	| NOT b_factor { $$ = new UnExprNode($2, OpType.Not, @1); }
 	;
 
 b_factor
-    : BVAL { $$ = new BoolNode($1); }
+    : BVAL { $$ = new BoolNode($1, @1); }
 	| relation { $$ = $1; }
 	;
 
 relation
-    : expr GT expr { $$ = new BinExprNode($1, $3, OpType.Gt); }
-	| expr LT expr { $$ = new BinExprNode($1, $3, OpType.Lt); }
-	| expr LET expr { $$ = new BinExprNode($1, $3, OpType.Let); }
-	| expr GET expr { $$ = new BinExprNode($1, $3, OpType.Get); }
-	| expr EQ expr { $$ = new BinExprNode($1, $3, OpType.Eq); }
-	| expr NEQ expr { $$ = new BinExprNode($1, $3, OpType.Neq); }
+    : expr GT expr { $$ = new BinExprNode($1, $3, OpType.Gt, @1); }
+	| expr LT expr { $$ = new BinExprNode($1, $3, OpType.Lt, @1); }
+	| expr LET expr { $$ = new BinExprNode($1, $3, OpType.Let, @1); }
+	| expr GET expr { $$ = new BinExprNode($1, $3, OpType.Get, @1); }
+	| expr EQ expr { $$ = new BinExprNode($1, $3, OpType.Eq, @1); }
+	| expr NEQ expr { $$ = new BinExprNode($1, $3, OpType.Neq, @1); }
 	| expr { $$ = $1; }
 	;
 
 expr
-    : expr PLUS term { $$ = new BinExprNode($1, $3, OpType.Plus); }
-	| expr MINUS term { $$ = new BinExprNode($1, $3, OpType.Minus); }
+    : expr PLUS term { $$ = new BinExprNode($1, $3, OpType.Plus, @1); }
+	| expr MINUS term { $$ = new BinExprNode($1, $3, OpType.Minus, @1); }
 	| term { $$ = $1; }
 	;
 
 term
-    : term MULT factor { $$ = new BinExprNode($1, $3, OpType.Mult); }
-	| term DIV factor { $$ = new BinExprNode($1, $3, OpType.Div); }
+    : term MULT factor { $$ = new BinExprNode($1, $3, OpType.Mult, @1); }
+	| term DIV factor { $$ = new BinExprNode($1, $3, OpType.Div, @1); }
 	| factor { $$ = $1; }
 	;
 
@@ -193,8 +202,8 @@ factor
     : LEFT_BRACKET b_expr RIGHT_BRACKET { $$ = $2; }
 	| ident  { $$ = $1 as IdNode; }
 	| fun_call { $$ = $1 as FunCallNode; }
-	| INUM { $$ = new IntNumNode($1); }
-	| DNUM { $$ = new DoubleNumNode($1); }
+	| INUM { $$ = new IntNumNode($1, @1); }
+	| DNUM { $$ = new DoubleNumNode($1, @1); }
 	;
 
 block
@@ -227,8 +236,13 @@ for_statement
     ;
 
 return
-    : RETURN b_expr { $$ = new ReturnNode($2); }
-	| RETURN        { $$ = new ReturnNode(); }
+    : RETURN return_expr { $$ = new ReturnNode($2); }
     ;
+
+return_expr
+	: b_expr { $$ = $1; }
+	|		 { $$ = null; }
+	;
+
 %%
 

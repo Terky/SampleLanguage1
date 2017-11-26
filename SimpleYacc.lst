@@ -3,9 +3,9 @@
 //  GPPG error listing for yacc source file <SimpleYacc.y>
 // ==========================================================================
 //  Version:  1.3.6
-//  Machine:  DESKTOP-0KBKC6T
-//  DateTime: 11/24/2017 3:13:49 PM
-//  UserName: Coelum
+//  Machine:  DESKTOP-32TFS7K
+//  DateTime: 26.11.2017 11:59:16
+//  UserName: wowit
 // ==========================================================================
 
 
@@ -31,6 +31,7 @@
             public DeclType declType;
 			public FormalPaparms formParams;
 			public List<ExprNode> eList;
+			public DeclAssign declAssign;
        }
 
 %using ProgramTree;
@@ -47,18 +48,21 @@
 %type <stVal> assign statement decl return cond proc_call while_cycle do_while_cycle do_while_cycle for_cycle for_initializer for_statement 
 %type <blVal> stlist block
 %type <fHead> fun_header
-%type <formParams> formal_params
-%type <eList> expr_list
+%type <formParams> formal_params?
+//------------------------------^
+// Error: This character is invalid in this context
+// ------------------------------------------------
+%type <eList> actual_params actual_params?
+//---------------------------------------^
+// Error: This character is invalid in this context
+// ------------------------------------------------
 %type <declId> decl_id
 %type <declType> type
-
+%type <declAssign> decl_assign?
+//----------------------------^
+// Error: This character is invalid in this context
+// ------------------------------------------------
 %%
-// Warning: Terminating decl_id fixes the following size-7 NonTerminal set
-   // {function, fun_list, fun_header, decl_id, progr, $accept, formal_params_fill}
-// Error: NonTerminal symbol "decl_id" has no productions
-// Error: There are 7 non-terminating NonTerminal Symbols
-   //  {function, fun_list, fun_header, decl_id, progr, $accept, formal_params_fill}
-// ---------------------------------------------------------------------------------
 
 progr
     : fun_list { root = $1 as MainProgramNode; }
@@ -73,18 +77,21 @@ function
     : fun_header block { $$ = new FunNode($1, $2); }
 	;
 
-decl_id:
+decl_id
     : ID { $$ = new DeclIdNode($1, @1); }
-//--^
-// Error: Syntax error, unexpected ':'
-// -----------------------------------
     ;
 
 fun_header
-    : type decl_id LEFT_BRACKET formal_params RIGHT_BRACKET { $$ = new FunHeader($1, $2, $4); }
+    : type decl_id LEFT_BRACKET formal_params? RIGHT_BRACKET { $$ = new FunHeader($1, $2, $4); }
+//-------------------------------------------^
+// Error: This character is invalid in this context
+// ------------------------------------------------
     ;
 
-formal_params
+formal_params?
+//-----------^
+// Error: This character is invalid in this context
+// ------------------------------------------------
     : formal_params_fill { $$ = $1; }
     |
     ;
@@ -128,22 +135,42 @@ proc_call
     ;
 
 decl
-    : ID ID { $$ = new DeclNode($1, $2); }
-	| ID assign { $$ = new DeclNode($1, $2 as AssignNode); }
+    : type decl_id decl_assign? { $$ = new DeclNode($1, $2, $3); }
+//----------------------------^
+// Error: This character is invalid in this context
+// ------------------------------------------------
+	;
+
+decl_assign?
+//---------^
+// Error: This character is invalid in this context
+// ------------------------------------------------
+	: ASSIGN b_expr { $$ = new DeclAssign($2); }
+	|
 	;
 
 fun_call
-    : ID LEFT_BRACKET expr_list RIGHT_BRACKET { $$ = new FunCallNode($1, $3); }
-	| ID LEFT_BRACKET RIGHT_BRACKET { $$ = new FunCallNode($1); }
+    : ID LEFT_BRACKET actual_params? RIGHT_BRACKET { $$ = new FunCallNode($1, $3); }
+//---------------------------------^
+// Error: This character is invalid in this context
+// ------------------------------------------------
 	;
 
-expr_list
+actual_params?
+//-----------^
+// Error: This character is invalid in this context
+// ------------------------------------------------
+	: actual_params { $$ = $1; }
+	|				{ $$ = null; }
+	;
+
+actual_params
     : b_expr
         {
             $$ = new List<ExprNode>();
 		    $$.Add($1);
         }
-	| expr_list COMMA b_expr 
+	| actual_params COMMA b_expr 
 		{
 		    $1.Add($3);
 			$$ = $1; 
@@ -247,9 +274,20 @@ for_statement
     ;
 
 return
-    : RETURN b_expr { $$ = new ReturnNode($2); }
-	| RETURN        { $$ = new ReturnNode(); }
+    : RETURN return_expr? { $$ = new ReturnNode($2); }
+//----------------------^
+// Error: This character is invalid in this context
+// ------------------------------------------------
     ;
+
+return_expr?
+//---------^
+// Error: This character is invalid in this context
+// ------------------------------------------------
+	: b_expr { $$ = $1; }
+	|		 { $$ = null; }
+	;
+
 %%
 
 // ==========================================================================

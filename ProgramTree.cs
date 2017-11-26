@@ -18,23 +18,28 @@ namespace ProgramTree
 
         public FormalParams Args { get; set; }
 
-        public FunHeader(string type, string name, FormalParams args)
+        public FunHeader(DeclType type, DeclId name, FormalParams args)
         {
             if (args == null)
             {
                 args = new FormalParams();
             }
-            Name = name;
-            Symbol t = ParserHelper.GlobalTable.Get(type);
-            if (!(t is TypeSymbol))
-            {
-                throw new SemanticExepction("Недопустимый тип аргумента " + Type + Name);
-            }
-            Type = (t as TypeSymbol).Value;
+            Name = name.Name;
+            Type = type.Type;
             Args = args;
         }
     }
-   
+
+    public class DeclAssign
+    {
+        public ExprNode Expr { get; set; }
+
+        public DeclAssign(ExprNode expr)
+        {
+            Expr = expr;
+        }
+    }
+
     public class FormalParams
     {
         public class FormalParam
@@ -70,14 +75,18 @@ namespace ProgramTree
 
     public class DeclType
     {
+        public LexLocation LexLoc { get; set; }
+
         public Symbol.ValueType Type { get; set; }
 
-        public DeclType(string type, LexLocation loc)
+        public DeclType(string type, LexLocation lexLoc)
         {
+            LexLoc = lexLoc;
             Symbol t = ParserHelper.GlobalTable.Get(type);
-            if (!(t is TypeSymbol) || (t as TypeSymbol).Value == Symbol.ValueType.VOID)
+            if (!(t is TypeSymbol))
             {
-                throw new SemanticExepction("Недопустимый тип аргумента " + Type);
+                throw new SemanticExepction("Недопустимый тип аргумента " + Type + 
+                    ". Строка " + lexLoc.StartLine + ", столбец " + lexLoc.StartColumn);
             }
             Type = (t as TypeSymbol).Value;
         }
@@ -85,10 +94,14 @@ namespace ProgramTree
 
     public class DeclId
     {
+
+        public LexLocation LexLoc { get; set; }
+
         public string Name { get; set; }
 
-        public DeclId(string name, LexLocation loc)
+        public DeclId(string name, LexLocation lexLoc)
         {
+            LexLoc = lexLoc;
             Name = name;
         }
     }
@@ -102,7 +115,7 @@ namespace ProgramTree
     {
         public List<FunNode> FunList = new List<FunNode>();
 
-        public MainProgramNode(FunNode fun)
+        public MainProgramNode(FunNode fun, LexLocation lexLoc) : base(lexLoc)
         {
             Add(fun);
         }
@@ -124,7 +137,7 @@ namespace ProgramTree
 
         public BlockNode Body { get; set; }
 
-        public FunNode(FunHeader header, BlockNode body)
+        public FunNode(FunHeader header, BlockNode body, LexLocation lexLoc) : base(lexLoc)
         {
             Header = header;
             Body = body;
@@ -140,11 +153,18 @@ namespace ProgramTree
 
     public abstract class ExprNode : Node // базовый класс для всех выражений
     {
+        public LexLocation LexLoc { get; set; }
+
+        public ExprNode(LexLocation lexLoc)
+        {
+            LexLoc = lexLoc;
+        }
     }
 
     public class IdNode : ExprNode
     {
-        public IdNode(string name) {
+        public IdNode(string name, LexLocation lexLoc): base(lexLoc)
+        {
             Name = name;
         }
 
@@ -158,7 +178,7 @@ namespace ProgramTree
 
     public class BinExprNode : ExprNode
     {
-        public BinExprNode(ExprNode left, ExprNode right, OpType op)
+        public BinExprNode(ExprNode left, ExprNode right, OpType op, LexLocation lexLoc) : base(lexLoc)
         {
             Left = left;
             Right = right;
@@ -184,7 +204,7 @@ namespace ProgramTree
 
         public OpType Op { get; set; }
 
-        public UnExprNode(ExprNode expr, OpType op)
+        public UnExprNode(ExprNode expr, OpType op, LexLocation lexLoc) : base(lexLoc)
         {
             Expr = expr;
             Op = op;
@@ -200,7 +220,7 @@ namespace ProgramTree
     {
         public int Num { get; set; }
 
-        public IntNumNode(int num) { Num = num; }
+        public IntNumNode(int num, LexLocation lexLoc) : base(lexLoc) { Num = num; }
 
         public override void Visit(Visitor v)
         {
@@ -212,7 +232,7 @@ namespace ProgramTree
     {
         public double Num { get; set; }
 
-        public DoubleNumNode(double num) { Num = num; }
+        public DoubleNumNode(double num, LexLocation lexLoc) : base(lexLoc) { Num = num; }
 
         public override void Visit(Visitor v)
         {
@@ -222,7 +242,7 @@ namespace ProgramTree
 
     public class BoolNode : ExprNode
     {
-        public BoolNode(bool val) { Val = val; }
+        public BoolNode(bool val, LexLocation lexLoc) : base(lexLoc) { Val = val; }
 
         public bool Val { get; set;}
 
@@ -319,19 +339,19 @@ namespace ProgramTree
 
     public class FunCallNode : ExprNode
     {
-        public FunCallNode(string name, List<ExprNode> exprList)
+        public FunCallNode(string name, List<ExprNode> actualParams, LexLocation lexLoc) : base(lexLoc)
         {
             Name = name;
-            ExprList = exprList;
+            if (actualParams == null)
+            {
+                ActualParams = new List<ExprNode>();
+            } else
+            {
+                ActualParams = actualParams;
+            }
         }
 
-        public FunCallNode(string name)
-        {
-            Name = name;
-            ExprList = new List<ExprNode>();
-        }
-
-        public List<ExprNode> ExprList { get; set; }
+        public List<ExprNode> ActualParams { get; set; }
 
         public string Name { get; set; }
 
@@ -342,6 +362,8 @@ namespace ProgramTree
     }
 
     public class DeclNode : StatementNode {
+        
+        public LexLocation LexLoc { get; set; }
 
         public string Name { set; get; }
 
@@ -349,25 +371,14 @@ namespace ProgramTree
 
         public AssignNode Assign { get; set; }
 
-        public DeclNode(string type, string name) {
-            InitType(type);
-            Name = name;
-        }
-
-        public DeclNode(string type, AssignNode assign) {
-            InitType(type);
-            Name = assign.Id.Name;
-            Assign = assign;
-        }
-
-        private void InitType(string type)
-        {
-            Symbol sym = ParserHelper.GlobalTable.Get(type);
-            if (!(sym is TypeSymbol))
+        public DeclNode(DeclType type, DeclId name, DeclAssign assign) {
+            LexLoc = type.LexLoc;
+            Type = type.Type;
+            Name = name.Name;
+            if (assign != null)
             {
-                throw new SemanticExepction("Error type: " + Type);
+                Assign = new AssignNode(new IdNode(Name, name.LexLoc), assign.Expr);
             }
-            Type = (sym as TypeSymbol).Value;
         }
 
         public override void Visit(Visitor v)
@@ -384,9 +395,6 @@ namespace ProgramTree
         {
             Expr = expr;
         }
-
-        //Для void
-        public ReturnNode() { }
 
         public override void Visit(Visitor v)
         {

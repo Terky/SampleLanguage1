@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SimpleParser;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,9 +13,8 @@ namespace SimpleLang
 
         public SymbolsRecord()
         {
-            TopTable = new SymbolTable(null);
-            BottomTable = TopTable;
-            BottomTable.Put(SymbolTable.RESULT, new VarSymbol());
+            BottomTable = ParserHelper.GlobalTable;
+            TopTable = new SymbolTable(BottomTable);
         }
     }
 }
