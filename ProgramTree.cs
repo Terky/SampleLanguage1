@@ -20,10 +20,10 @@ namespace ProgramTree
 
             public Decl(DeclId name, DeclAssign assign)
             {
-                Assign = 
+                Assign =
                     assign == null ?
-                        new AssignNode(new IdNode(name.Name, name.LexLoc), assign.Expr)
-                        : null;
+                        null :
+                        new AssignNode(new IdNode(name.Name, name.LexLoc), assign.Expr);
                 Name = name;
             }
         }
@@ -32,6 +32,7 @@ namespace ProgramTree
 
         public DeclList(DeclId name, DeclAssign assign)
         {
+            DeclsList = new List<Decl>();
             DeclsList.Add(new Decl(name, assign));
         }
 

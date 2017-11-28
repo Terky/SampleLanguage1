@@ -170,12 +170,7 @@ b_expr
 
 b_term
     : b_term AND not_factor { $$ = new BinExprNode($1, $3, OpType.And, @1); }
-	| not_factor { $$ = $1; }
-	;
-
-not_factor
-    : b_factor { $$ = $1; }
-	| NOT b_factor { $$ = new UnExprNode($2, OpType.Not, @1); }
+	| b_factor { $$ = $1; }
 	;
 
 b_factor
@@ -202,7 +197,12 @@ expr
 term
     : term MULT factor { $$ = new BinExprNode($1, $3, OpType.Mult, @1); }
 	| term DIV factor { $$ = new BinExprNode($1, $3, OpType.Div, @1); }
-	| factor { $$ = $1; }
+	| not_factor { $$ = $1; }
+	;
+
+not_factor
+    : factor { $$ = $1; }
+	| NOT factor { $$ = new UnExprNode($2, OpType.Not, @1); }
 	;
 
 factor

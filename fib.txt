@@ -6,9 +6,9 @@ int greatestFibLessThen(int fst, int sec, int upperBound) {
 }
 
 void main() {
- int res;
- res = greatestFibLessThen(1, 1, 1000);
- int g = greatestFibLessThen(1, 1, 100000);
- int s = 9.7;
+ int res = greatestFibLessThen(1, 1, 1000), g = 3, k;
+ res = 1;
+ g = greatestFibLessThen(1, 1, 100000);
+ k = res + g;
  return;
 }
