@@ -75,12 +75,15 @@ namespace SimpleLang
 
         public override void Visit(DeclNode node)
         {
-            VarSymbol s = new VarSymbol();
-            s.Type = node.Type;
-            ParserHelper.TopTable().Put(node.Name, s);
-            if (node.Assign != null)
+            foreach (var decl in node.DeclsList.DeclsList)
             {
-                node.Assign.Visit(this);
+                VarSymbol s = new VarSymbol();
+                s.Type = node.Type;
+                ParserHelper.TopTable().Put(decl.Name.Name, s);
+                if (decl.Assign != null)
+                {
+                    decl.Assign.Visit(this);
+                }
             }
         }
 
@@ -202,7 +205,7 @@ namespace SimpleLang
             VarSymbol initVar = null;
             if (node.Init is DeclNode)
             {
-                initVar = ParserHelper.TopTable().Get((node.Init as DeclNode).Name) as VarSymbol;
+                initVar = ParserHelper.TopTable().Get((node.Init as DeclNode).DeclsList.DeclsList[0].Name.Name) as VarSymbol;
 
             }
             else

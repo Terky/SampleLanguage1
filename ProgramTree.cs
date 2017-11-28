@@ -10,6 +10,37 @@ namespace ProgramTree
 
     public enum OpType { Plus, Minus, Div, Mult, Or, And, Not, Lt, Gt, Let, Get, Eq, Neq };
 
+    public class DeclList
+    {
+        public class Decl
+        {
+            public AssignNode Assign { get; set; }
+
+            public DeclId Name { get; set; }
+
+            public Decl(DeclId name, DeclAssign assign)
+            {
+                Assign = 
+                    assign == null ?
+                        new AssignNode(new IdNode(name.Name, name.LexLoc), assign.Expr)
+                        : null;
+                Name = name;
+            }
+        }
+
+        public List<Decl> DeclsList { get; set; }
+
+        public DeclList(DeclId name, DeclAssign assign)
+        {
+            DeclsList.Add(new Decl(name, assign));
+        }
+
+        public void Add(DeclId name, DeclAssign assign)
+        {
+            DeclsList.Add(new Decl(name, assign));
+        }
+}
+
     public class FunHeader
     {
         public Symbol.ValueType Type { get; set; }
@@ -365,20 +396,14 @@ namespace ProgramTree
         
         public LexLocation LexLoc { get; set; }
 
-        public string Name { set; get; }
-
         public Symbol.ValueType Type { set; get; }
 
-        public AssignNode Assign { get; set; }
+        public DeclList DeclsList { get; set; }
 
-        public DeclNode(DeclType type, DeclId name, DeclAssign assign) {
+        public DeclNode(DeclType type, DeclList declsList) {
             LexLoc = type.LexLoc;
             Type = type.Type;
-            Name = name.Name;
-            if (assign != null)
-            {
-                Assign = new AssignNode(new IdNode(Name, name.LexLoc), assign.Expr);
-            }
+            DeclsList = declsList;
         }
 
         public override void Visit(Visitor v)

@@ -30,7 +30,7 @@ namespace SimpleCompiler
                     //foreach (var st in parser.root.StList)
                     //Console.WriteLine(st);
                 }
-                parser.root.Visit(new StaticTypeCheckVisitor());
+                parser.root.Visit(new StaticCheckVisitor());
                 parser.root.Visit(new ExecutionVisitor());
             }
             catch (FileNotFoundException)
