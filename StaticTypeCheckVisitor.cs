@@ -7,11 +7,11 @@ using SimpleParser;
 
 namespace SimpleLang
 {
-    public class StaticTypeCheckVisitor : Visitor
+    public class StaticCheckVisitor : Visitor
     {
         public Returner returner { get; set; }
 
-        public StaticTypeCheckVisitor()
+        public StaticCheckVisitor()
         {
             returner = new Returner();
         }
@@ -130,12 +130,15 @@ namespace SimpleLang
                 throw new SemanticExepction("Использование типа void в данном контексте недопустимо"
                     + ". Строка " + node.LexLoc.StartLine + ", столбец " + node.LexLoc.StartColumn);
             }
-            VarSymbol s = new VarSymbol();
-            s.Type = node.Type;
-            ParserHelper.TopTable().Put(node.Name, s);
-            if (node.Assign != null)
+            foreach (var decl in node.DeclsList.DeclsList)
             {
-                node.Assign.Visit(this);
+                VarSymbol s = new VarSymbol();
+                s.Type = node.Type;
+                ParserHelper.TopTable().Put(decl.Name.Name, s);
+                if (decl.Assign != null)
+                {
+                    decl.Assign.Visit(this);
+                }
             }
         }
 

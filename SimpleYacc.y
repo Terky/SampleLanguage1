@@ -21,6 +21,7 @@
 			public FormalParams formParams;
 			public List<ExprNode> eList;
 			public DeclAssign declAssign;
+            public DeclList declList;
        }
 
 %using ProgramTree;
@@ -42,6 +43,7 @@
 %type <declId> decl_id
 %type <declType> type
 %type <declAssign> decl_assign
+%type <declList> decl_list
 %%
 
 progr
@@ -109,12 +111,17 @@ proc_call
     ;
 
 decl
-    : type decl_id decl_assign { $$ = new DeclNode($1, $2, $3); }
+    : type decl_list { $$ = new DeclNode($1, $2); }
 	;
+
+decl_list
+    : decl_list COMMA decl_id decl_assign { ($1 as DeclList).Add($3, $4); $$ = $1; }
+    | decl_id decl_assign { $$ = new DeclList($1, $2); }
+    ;
 
 decl_assign
 	: ASSIGN b_expr { $$ = new DeclAssign($2); }
-	|
+	|               { $$ = null; }
 	;
 
 fun_call
@@ -163,12 +170,7 @@ b_expr
 
 b_term
     : b_term AND not_factor { $$ = new BinExprNode($1, $3, OpType.And, @1); }
-	| not_factor { $$ = $1; }
-	;
-
-not_factor
-    : b_factor { $$ = $1; }
-	| NOT b_factor { $$ = new UnExprNode($2, OpType.Not, @1); }
+	| b_factor { $$ = $1; }
 	;
 
 b_factor
@@ -195,7 +197,12 @@ expr
 term
     : term MULT factor { $$ = new BinExprNode($1, $3, OpType.Mult, @1); }
 	| term DIV factor { $$ = new BinExprNode($1, $3, OpType.Div, @1); }
-	| factor { $$ = $1; }
+	| not_factor { $$ = $1; }
+	;
+
+not_factor
+    : factor { $$ = $1; }
+	| NOT factor { $$ = new UnExprNode($2, OpType.Not, @1); }
 	;
 
 factor

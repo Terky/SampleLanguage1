@@ -11,7 +11,7 @@ namespace SimpleCompiler
     {
         public static void Main()
         {
-            string FileName = @"..\..\fib.txt";
+            string FileName = @"..\..\sum.txt";
             try
             {
                 string Text = File.ReadAllText(FileName);
@@ -30,7 +30,7 @@ namespace SimpleCompiler
                     //foreach (var st in parser.root.StList)
                     //Console.WriteLine(st);
                 }
-                parser.root.Visit(new StaticTypeCheckVisitor());
+                parser.root.Visit(new StaticCheckVisitor());
                 parser.root.Visit(new ExecutionVisitor());
             }
             catch (FileNotFoundException)
