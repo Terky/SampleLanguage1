@@ -7,16 +7,10 @@ using SimpleParser;
 
 namespace SimpleLang
 {
-    public class StaticCheckVisitor : Visitor
+    public class StaticCheckVisitor : Visitor<Symbol.ValueType>
     {
-        public Returner returner { get; set; }
 
-        public StaticCheckVisitor()
-        {
-            returner = new Returner();
-        }
-
-        public override void Visit(MainProgramNode node)
+        public override Symbol.ValueType Visit(MainProgramNode node)
         {
             foreach (FunNode fun in node.FunList)
             {
@@ -26,9 +20,11 @@ namespace SimpleLang
                 fun.Visit(this);
                 ParserHelper.Stack.Pop();
             }
+
+            return Symbol.ValueType.NOT_A_TYPE;
         }
 
-        public override void Visit(FunNode node)
+        public override Symbol.ValueType Visit(FunNode node)
         {
             var args = node.Header.Args.FormalParamList;
             foreach (var arg in args)
@@ -38,26 +34,27 @@ namespace SimpleLang
                 ParserHelper.TopTable().Put(arg.Name.Name, sym);
             }
             bool hasReturn = false;
+            Symbol.ValueType returnType = Symbol.ValueType.UNKNOWN;
             foreach (StatementNode stat in node.Body.StList)
             {
                 if (stat is ReturnNode)
                 {
                     hasReturn = true;
                     Symbol.ValueType funType = node.Header.Type;
-                    ExprNode returnExpr = (stat as ReturnNode).Expr;
-                    Symbol.ValueType returnType;
-                    if (returnExpr != null)
-                    {
-                        returnExpr.Visit(this);
-                        returnType = returner.Value.Type;
-                    } else
-                    {
-                        returnType = Symbol.ValueType.VOID;
-                    }
+                    //ExprNode returnExpr = (stat as ReturnNode).Expr;
+                    //if (returnExpr != null)
+                    //{
+
+                    //    returnType = returnExpr.Visit(this);
+                    //} else
+                    //{
+                    //    returnType = Symbol.ValueType.VOID;
+                    //}
+                    returnType = stat.Visit(this);
                     if (funType != returnType)
                     {
                         throw new IncompatibleTypesException("Несоответствие возвращаемого и указанного типа в функции " + node.Header.Name
-                            + ". Строка " + returnExpr.LexLoc.StartLine + ", столбец " + returnExpr.LexLoc.StartColumn);
+                            + ". Строка " + stat.LexLoc.StartLine + ", столбец " + returnExpr.LexLoc.StartColumn);
                     }
                 }
                 else
@@ -70,14 +67,13 @@ namespace SimpleLang
                 throw new SemanticExepction("Пропущено выражение return в функции " + node.Header.Name
                     + ". Строка " + node.LexLoc.StartLine + ", столбец " + node.LexLoc.StartColumn);
             }
+            return returnType;
         }
 
-        public override void Visit(AssignNode node)
+        public override Symbol.ValueType Visit(AssignNode node)
         {
-            node.Expr.Visit(this);
-            Symbol.ValueType exprType = returner.Value.Type;
-            node.Id.Visit(this);
-            Symbol.ValueType idType = returner.Value.Type;
+            Symbol.ValueType exprType = node.Expr.Visit(this);
+            Symbol.ValueType idType = node.Id.Visit(this);
             //TODO: сделать совместимыми по присваиванию не только равные типы
             if (idType != exprType)
             {
@@ -85,9 +81,10 @@ namespace SimpleLang
                     idType + " and " + exprType
                     + ". Строка " + node.Id.LexLoc.StartLine + ", столбец " + node.Id.LexLoc.StartColumn);
             }
+            return Symbol.ValueType.NOT_A_TYPE;
         }
 
-        public override void Visit(BlockNode node)
+        public override Symbol.ValueType Visit(BlockNode node)
         {
             var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
@@ -98,15 +95,15 @@ namespace SimpleLang
             }
 
             ParserHelper.Stack.Peek().TopTable = savedTable;
+            return Symbol.ValueType.NOT_A_TYPE;
         }
 
-        public override void Visit(CondNode node)
+        public override Symbol.ValueType Visit(CondNode node)
         {
             var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
-
-            node.Expr.Visit(this);
-            Symbol.ValueType exprType = returner.Value.Type;
+            
+            Symbol.ValueType exprType = node.Expr.Visit(this);
             if (exprType != Symbol.ValueType.BOOL)
             {
                 //TODO: сделать новый класс исключений для подобного?
@@ -121,9 +118,10 @@ namespace SimpleLang
             }
 
             ParserHelper.Stack.Peek().TopTable = savedTable;
+            return Symbol.ValueType.NOT_A_TYPE;
         }
 
-        public override void Visit(DeclNode node)
+        public override Symbol.ValueType Visit(DeclNode node)
         {
             if (node.Type == Symbol.ValueType.VOID)
             {
@@ -140,42 +138,45 @@ namespace SimpleLang
                     decl.Assign.Visit(this);
                 }
             }
+            return Symbol.ValueType.NOT_A_TYPE;
         }
 
-        public override void Visit(ReturnNode node)
+        public override Symbol.ValueType Visit(ReturnNode node)
         {
+            Symbol.ValueType returnType;
             if (node.Expr != null)
             {
-                node.Expr.Visit(this);
+                returnType = node.Expr.Visit(this);
             }
             else
             {
-                returner.Value = new VarSymbol(Symbol.ValueType.VOID);
+                returnType = Symbol.ValueType.VOID;
             }
+            return returnType;
         }
 
-        public override void Visit(BoolNode node)
+        public override Symbol.ValueType Visit(BoolNode node)
         {
             returner.Value = new VarSymbol(Symbol.ValueType.BOOL);
         }
 
-        public override void Visit(DoubleNumNode node)
+        public override Symbol.ValueType Visit(DoubleNumNode node)
         {
             returner.Value = new VarSymbol(Symbol.ValueType.DOUBLE);
         }
 
-        public override void Visit(IntNumNode node)
+        public override Symbol.ValueType Visit(IntNumNode node)
         {
             returner.Value = new VarSymbol(Symbol.ValueType.INT);
         }
 
-        public override void Visit(IdNode node)
+        public override Symbol.ValueType Visit(IdNode node)
         {
             VarSymbol sym = ParserHelper.TopTable().Get(node.Name) as VarSymbol;
             returner.Value = new VarSymbol(sym.Type);
         }
 
-        public override void Visit(UnExprNode node)
+        public override Symbol.ValueType Visit(UnExprNode node)
         {
             switch (node.Op)
             {
@@ -194,7 +195,7 @@ namespace SimpleLang
             }
         }
 
-        public override void Visit(FunCallNode node)
+        public override Symbol.ValueType Visit(FunCallNode node)
         {
             Symbol sym = ParserHelper.GlobalTable.Get(node.Name);
             if (!(sym is FunSymbol))
@@ -225,12 +226,12 @@ namespace SimpleLang
             }
         }
 
-        public override void Visit(ProcCallNode node)
+        public override Symbol.ValueType Visit(ProcCallNode node)
         {
             node.FunCall.Visit(this);
         }
 
-        public override void Visit(WhileNode node)
+        public override Symbol.ValueType Visit(WhileNode node)
         {
             var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
@@ -246,7 +247,7 @@ namespace SimpleLang
             ParserHelper.Stack.Peek().TopTable = savedTable;
         }
 
-        public override void Visit(DoWhileNode node)
+        public override Symbol.ValueType Visit(DoWhileNode node)
         {
             var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
@@ -262,7 +263,7 @@ namespace SimpleLang
             ParserHelper.Stack.Peek().TopTable = savedTable;
         }
 
-        public override void Visit(ForNode node)
+        public override Symbol.ValueType Visit(ForNode node)
         {
             var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
@@ -280,7 +281,7 @@ namespace SimpleLang
             ParserHelper.Stack.Peek().TopTable = savedTable;
         }
 
-        public override void Visit(BinExprNode node)
+        public override Symbol.ValueType Visit(BinExprNode node)
         {
             node.Left.Visit(this);
             Symbol.ValueType leftType = returner.Value.Type;

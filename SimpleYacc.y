@@ -51,12 +51,12 @@ progr
 	;
 
 fun_list
-    : function { $$ = new MainProgramNode($1 as FunNode, @1); }
+    : function { $$ = new MainProgramNode($1 as FunNode, @$); }
 	| fun_list function { ($1 as MainProgramNode).Add($2 as FunNode); $$ = $1; }
 	;
 
 function
-    : fun_header block { $$ = new FunNode($1, $2, @1); }
+    : fun_header block { $$ = new FunNode($1, $2, @$); }
 	;
 
 decl_id
@@ -64,7 +64,7 @@ decl_id
     ;
 
 fun_header
-    : type decl_id LEFT_BRACKET formal_params RIGHT_BRACKET { $$ = new FunHeader($1, $2, $4); }
+    : type decl_id LEFT_BRACKET formal_params RIGHT_BRACKET { $$ = new FunHeader($1, $2, $4, @$); }
     ;
 
 formal_params
@@ -73,7 +73,7 @@ formal_params
     ;
 
 formal_params_fill
-    : type decl_id { $$ = new FormalParams($1, $2); }
+    : type decl_id { $$ = new FormalParams($1, $2, @$); }
 	| formal_params_fill COMMA type decl_id  
 	    {
 		    $1.Add($3,$4);
@@ -82,7 +82,7 @@ formal_params_fill
 	;
 
 stlist
-    : statement { $$ = new BlockNode($1); }
+    : statement { $$ = new BlockNode($1, @$); }
 	| stlist statement 
 	    { 
 		    if ($2 != null)
@@ -107,25 +107,25 @@ statement
     ;
 
 proc_call
-    : fun_call { $$ = new ProcCallNode($1 as FunCallNode); }
+    : fun_call { $$ = new ProcCallNode($1 as FunCallNode, @$); }
     ;
 
 decl
-    : type decl_list { $$ = new DeclNode($1, $2); }
+    : type decl_list { $$ = new DeclNode($1, $2, @$); }
 	;
 
 decl_list
     : decl_list COMMA decl_id decl_assign { ($1 as DeclList).Add($3, $4); $$ = $1; }
-    | decl_id decl_assign { $$ = new DeclList($1, $2); }
+    | decl_id decl_assign { $$ = new DeclList($1, $2, @$); }
     ;
 
 decl_assign
-	: ASSIGN b_expr { $$ = new DeclAssign($2); }
+	: ASSIGN b_expr { $$ = new DeclAssign($2, @$); }
 	|               { $$ = null; }
 	;
 
 fun_call
-    : ID LEFT_BRACKET actual_params RIGHT_BRACKET { $$ = new FunCallNode($1, $3, @1); }
+    : ID LEFT_BRACKET actual_params RIGHT_BRACKET { $$ = new FunCallNode($1, $3, @$); }
 	;
 
 actual_params
@@ -134,7 +134,7 @@ actual_params
 	;
 
 actual_params_fill
-    : b_expr
+    : bool_expr
         {
             $$ = new List<ExprNode>();
 		    $$.Add($1);

@@ -140,7 +140,7 @@ namespace ProgramTree
 
     public abstract class Node // базовый класс для всех узлов    
     {
-        public abstract void Visit(Visitor v);
+        public abstract T Visit<T>(Visitor<T> v);
     }
 
     public class MainProgramNode : ExprNode
@@ -157,9 +157,9 @@ namespace ProgramTree
             FunList.Add(fun);
         }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
     }
 
@@ -177,9 +177,9 @@ namespace ProgramTree
             ParserHelper.GlobalTable.Put(Header.Name, funSymbol);
         }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
     }
 
@@ -202,9 +202,9 @@ namespace ProgramTree
 
         public string Name { get; set; }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
     }
 
@@ -223,9 +223,9 @@ namespace ProgramTree
 
         public OpType Op { get; set; }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
 
     }
@@ -242,9 +242,9 @@ namespace ProgramTree
             Op = op;
         }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
     }
 
@@ -254,9 +254,9 @@ namespace ProgramTree
 
         public IntNumNode(int num, LexLocation lexLoc) : base(lexLoc) { Num = num; }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
     }
 
@@ -266,9 +266,9 @@ namespace ProgramTree
 
         public DoubleNumNode(double num, LexLocation lexLoc) : base(lexLoc) { Num = num; }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
     }
 
@@ -278,9 +278,9 @@ namespace ProgramTree
 
         public bool Val { get; set;}
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
     }
 
@@ -303,9 +303,9 @@ namespace ProgramTree
             AssOp = assop;
         }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
     }
 
@@ -324,9 +324,9 @@ namespace ProgramTree
             StatElse = statElse;
         }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
     }
 
@@ -347,9 +347,9 @@ namespace ProgramTree
             StList.Add(stat);
         }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
 
     }
@@ -363,9 +363,9 @@ namespace ProgramTree
             FunCall = funCall;
         }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
     }
 
@@ -387,9 +387,9 @@ namespace ProgramTree
 
         public string Name { get; set; }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
     }
 
@@ -407,9 +407,9 @@ namespace ProgramTree
             DeclsList = declsList;
         }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
     }
 
@@ -422,9 +422,9 @@ namespace ProgramTree
             Expr = expr;
         }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
     }
 
@@ -441,9 +441,9 @@ namespace ProgramTree
             Stat = stat;
         }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
     }
 
@@ -460,9 +460,9 @@ namespace ProgramTree
             Stat = stat;
         }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
     }
 
@@ -492,9 +492,9 @@ namespace ProgramTree
             Stat = stat;
         }
 
-        public override void Visit(Visitor v)
+        public override T Visit<T>(Visitor<T> v)
         {
-            v.Visit(this);
+            return v.Visit(this);
         }
     }
 }

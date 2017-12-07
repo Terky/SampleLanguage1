@@ -6,25 +6,25 @@ using System.Text;
 
 namespace SimpleLang
 {
-    public abstract class Visitor
+    public abstract class Visitor<T>
     {
-        public abstract void Visit(MainProgramNode node);
-        public abstract void Visit(FunNode node);
-        public abstract void Visit(IdNode node);
-        public abstract void Visit(BinExprNode node);
-        public abstract void Visit(UnExprNode node);
-        public abstract void Visit(IntNumNode node);
-        public abstract void Visit(DoubleNumNode node);
-        public abstract void Visit(BoolNode node);
-        public abstract void Visit(AssignNode node);
-        public abstract void Visit(CondNode node);
-        public abstract void Visit(BlockNode node);
-        public abstract void Visit(ProcCallNode node);
-        public abstract void Visit(FunCallNode node);
-        public abstract void Visit(DeclNode node);
-        public abstract void Visit(ReturnNode node);
-        public abstract void Visit(WhileNode node);
-        public abstract void Visit(DoWhileNode node);
-        public abstract void Visit(ForNode node);
+        public abstract T Visit(MainProgramNode node);
+        public abstract T Visit(FunNode node);
+        public abstract T Visit(IdNode node);
+        public abstract T Visit(BinExprNode node);
+        public abstract T Visit(UnExprNode node);
+        public abstract T Visit(IntNumNode node);
+        public abstract T Visit(DoubleNumNode node);
+        public abstract T Visit(BoolNode node);
+        public abstract T Visit(AssignNode node);
+        public abstract T Visit(CondNode node);
+        public abstract T Visit(BlockNode node);
+        public abstract T Visit(ProcCallNode node);
+        public abstract T Visit(FunCallNode node);
+        public abstract T Visit(DeclNode node);
+        public abstract T Visit(ReturnNode node);
+        public abstract T Visit(WhileNode node);
+        public abstract T Visit(DoWhileNode node);
+        public abstract T Visit(ForNode node);
     }
 }

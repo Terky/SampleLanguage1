@@ -13,7 +13,8 @@ namespace SimpleLang
             DOUBLE,
             BOOL,
             VOID,
-            UNKNOWN
+            UNKNOWN,
+            NOT_A_TYPE
         };
         
        
