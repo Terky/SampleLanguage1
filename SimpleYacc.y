@@ -34,7 +34,7 @@
 %token <bVal> BVAL
 %token <sVal> ID
 
-%type <eVal> expr ident term factor function fun_list fun_call b_expr b_term b_factor not_factor relation return_expr
+%type <eVal> arithm_expr ident arithm_term arithm_factor function fun_list fun_call bool_expr bool_term bool_factor not_factor relation return_expr
 %type <stVal> assign statement decl return cond proc_call while_cycle do_while_cycle do_while_cycle for_cycle for_initializer for_statement 
 %type <blVal> stlist block
 %type <fHead> fun_header
@@ -60,7 +60,7 @@ function
 	;
 
 decl_id
-    : ID { $$ = new DeclId($1, @1); }
+    : ID { $$ = new DeclId($1, @$); }
     ;
 
 fun_header
@@ -120,8 +120,8 @@ decl_list
     ;
 
 decl_assign
-	: ASSIGN b_expr { $$ = new DeclAssign($2, @$); }
-	|               { $$ = null; }
+	: ASSIGN bool_expr { $$ = new DeclAssign($2, @$); }
+	|
 	;
 
 fun_call
@@ -139,7 +139,7 @@ actual_params_fill
             $$ = new List<ExprNode>();
 		    $$.Add($1);
         }
-	| actual_params COMMA b_expr 
+	| actual_params COMMA bool_expr 
 		{
 		    $1.Add($3);
 			$$ = $1; 
@@ -147,70 +147,70 @@ actual_params_fill
 	;
 
 ident
-    : ID { $$ = new IdNode($1, @1); }	
+    : ID { $$ = new IdNode($1, @$); }	
 	;
 
 type
-    : ID { $$ = new DeclType($1, @1); }
+    : ID { $$ = new DeclType($1, @$); }
     ;
 	
 assign
-    : ident ASSIGN b_expr { $$ = new AssignNode($1 as IdNode, $3); }
+    : ident ASSIGN bool_expr { $$ = new AssignNode($1 as IdNode, $3, @$); }
 	;
 
 cond
-    : IF LEFT_BRACKET b_expr RIGHT_BRACKET statement ELSE statement { $$ = new CondNode($3, $5, $7); }
-	| IF LEFT_BRACKET b_expr RIGHT_BRACKET statement { $$ = new CondNode($3, $5, null); }
+    : IF LEFT_BRACKET bool_expr RIGHT_BRACKET statement ELSE statement { $$ = new CondNode($3, $5, $7, @$); }
+	| IF LEFT_BRACKET bool_expr RIGHT_BRACKET statement { $$ = new CondNode($3, $5, null, @$); }
 	;
 
-b_expr
-    : b_expr OR b_term { $$ = new BinExprNode($1, $3, OpType.Or, @1); }
-	| b_term { $$ = $1; }
+bool_expr
+    : bool_expr OR bool_term { $$ = new BinExprNode($1, $3, OpType.Or, @$); }
+	| bool_term { $$ = $1; }
 	;
 
-b_term
-    : b_term AND not_factor { $$ = new BinExprNode($1, $3, OpType.And, @1); }
-	| b_factor { $$ = $1; }
-	;
-
-b_factor
-    : BVAL { $$ = new BoolNode($1, @1); }
-	| relation { $$ = $1; }
-	;
-
-relation
-    : expr GT expr { $$ = new BinExprNode($1, $3, OpType.Gt, @1); }
-	| expr LT expr { $$ = new BinExprNode($1, $3, OpType.Lt, @1); }
-	| expr LET expr { $$ = new BinExprNode($1, $3, OpType.Let, @1); }
-	| expr GET expr { $$ = new BinExprNode($1, $3, OpType.Get, @1); }
-	| expr EQ expr { $$ = new BinExprNode($1, $3, OpType.Eq, @1); }
-	| expr NEQ expr { $$ = new BinExprNode($1, $3, OpType.Neq, @1); }
-	| expr { $$ = $1; }
-	;
-
-expr
-    : expr PLUS term { $$ = new BinExprNode($1, $3, OpType.Plus, @1); }
-	| expr MINUS term { $$ = new BinExprNode($1, $3, OpType.Minus, @1); }
-	| term { $$ = $1; }
-	;
-
-term
-    : term MULT factor { $$ = new BinExprNode($1, $3, OpType.Mult, @1); }
-	| term DIV factor { $$ = new BinExprNode($1, $3, OpType.Div, @1); }
+bool_term
+    : bool_term AND not_factor { $$ = new BinExprNode($1, $3, OpType.And, @$); }
 	| not_factor { $$ = $1; }
 	;
 
 not_factor
-    : factor { $$ = $1; }
-	| NOT factor { $$ = new UnExprNode($2, OpType.Not, @1); }
+    : bool_factor { $$ = $1; }
+	| NOT bool_factor { $$ = new UnExprNode($2, OpType.Not, @$); }
 	;
 
-factor
-    : LEFT_BRACKET b_expr RIGHT_BRACKET { $$ = $2; }
+bool_factor
+    : BVAL { $$ = new BoolNode($1, @$); }
+	| relation { $$ = $1; }
+	;
+
+relation
+    : arithm_expr GT arithm_expr { $$ = new BinExprNode($1, $3, OpType.Gt, @$); }
+	| arithm_expr LT arithm_expr { $$ = new BinExprNode($1, $3, OpType.Lt, @$); }
+	| arithm_expr LET arithm_expr { $$ = new BinExprNode($1, $3, OpType.Let, @$); }
+	| arithm_expr GET arithm_expr { $$ = new BinExprNode($1, $3, OpType.Get, @$); }
+	| arithm_expr EQ arithm_expr { $$ = new BinExprNode($1, $3, OpType.Eq, @$); }
+	| arithm_expr NEQ arithm_expr { $$ = new BinExprNode($1, $3, OpType.Neq, @$); }
+	| arithm_expr { $$ = $1; }
+	;
+
+arithm_expr
+    : arithm_expr PLUS arithm_term { $$ = new BinExprNode($1, $3, OpType.Plus, @$); }
+	| arithm_expr MINUS arithm_term { $$ = new BinExprNode($1, $3, OpType.Minus, @$); }
+	| arithm_term { $$ = $1; }
+	;
+
+arithm_term
+    : arithm_term MULT arithm_factor { $$ = new BinExprNode($1, $3, OpType.Mult, @$); }
+	| arithm_term DIV arithm_factor { $$ = new BinExprNode($1, $3, OpType.Div, @$); }
+	| arithm_factor { $$ = $1; }
+	;
+
+arithm_factor
+    : LEFT_BRACKET bool_expr RIGHT_BRACKET { $$ = $2; }
 	| ident  { $$ = $1 as IdNode; }
 	| fun_call { $$ = $1 as FunCallNode; }
-	| INUM { $$ = new IntNumNode($1, @1); }
-	| DNUM { $$ = new DoubleNumNode($1, @1); }
+	| INUM { $$ = new IntNumNode($1, @$); }
+	| DNUM { $$ = new DoubleNumNode($1, @$); }
 	;
 
 block
@@ -218,17 +218,17 @@ block
 	;
 
 while_cycle
-    : WHILE LEFT_BRACKET b_expr RIGHT_BRACKET statement { $$ = new WhileNode($3, $5); }
+    : WHILE LEFT_BRACKET bool_expr RIGHT_BRACKET statement { $$ = new WhileNode($3, $5, @$); }
 	;
 
 do_while_cycle
-    : DO statement WHILE LEFT_BRACKET b_expr RIGHT_BRACKET { $$ = new DoWhileNode($5, $2); }
+    : DO statement WHILE LEFT_BRACKET bool_expr RIGHT_BRACKET { $$ = new DoWhileNode($5, $2, @$); }
 	;
 
 for_cycle     
-    : FOR LEFT_BRACKET for_initializer SEMICOLON b_expr SEMICOLON for_statement RIGHT_BRACKET statement
+    : FOR LEFT_BRACKET for_initializer SEMICOLON bool_expr SEMICOLON for_statement RIGHT_BRACKET statement
         {
-            $$ = new ForNode($3, $5, $7, $9);
+            $$ = new ForNode($3, $5, $7, $9, @$);
         }
     ;
 
@@ -243,11 +243,11 @@ for_statement
     ;
 
 return
-    : RETURN return_expr { $$ = new ReturnNode($2); }
+    : RETURN return_expr { $$ = new ReturnNode($2, @$); }
     ;
 
 return_expr
-	: b_expr { $$ = $1; }
+	: bool_expr { $$ = $1; }
 	|		 { $$ = null; }
 	;
 

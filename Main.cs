@@ -11,7 +11,7 @@ namespace SimpleCompiler
     {
         public static void Main()
         {
-            string FileName = @"..\..\sum.txt";
+            string FileName = @"..\..\fib.txt";
             try
             {
                 string Text = File.ReadAllText(FileName);
@@ -45,13 +45,13 @@ namespace SimpleCompiler
             {
                 Console.WriteLine("Syntax error. " + e.Message); //Синтаксическая ошибка
             }
-            catch (SemanticExepction e)
-            {
-                Console.WriteLine("Semantic error. " + e.Message);
-            }
             catch (IncompatibleTypesException e)
             {
                 Console.WriteLine("Incompatible types " + e.Message);
+            }
+            catch (SemanticExepction e)
+            {
+                Console.WriteLine("Semantic error. " + e.Message);
             }
             Console.ReadLine();
         }

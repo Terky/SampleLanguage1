@@ -1,4 +1,5 @@
-﻿using SimpleLang;
+﻿using ProgramTree;
+using SimpleLang;
 using System;
 using System.Collections.Generic;
 
@@ -8,17 +9,23 @@ namespace SimpleParser
     {
         public LexException(string msg) : base(msg) { }
     }
+
     public class SyntaxException : Exception
     {
         public SyntaxException(string msg) : base(msg) { }
     }
+
     public class SemanticExepction : Exception
     {
+        public SemanticExepction(string msg, Node node)
+            : base(msg + ". Строка " + node.LexLoc.StartLine + ", столбец " + node.LexLoc.StartColumn) { }
+
         public SemanticExepction(string msg) : base(msg) { }
     }
-    public class IncompatibleTypesException: Exception
+
+    public class IncompatibleTypesException: SemanticExepction
     {
-        public IncompatibleTypesException(string msg) : base(msg) { }
+        public IncompatibleTypesException(string msg, Node node) : base(msg, node) { }
     }
 
     // Класс глобальных описаний и статических методов

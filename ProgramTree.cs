@@ -18,40 +18,46 @@ namespace ProgramTree
 
             public DeclId Name { get; set; }
 
-            public Decl(DeclId name, DeclAssign assign)
+            public Decl(DeclId name, DeclAssign assign, LexLocation lexLoc)
             {
                 Assign =
                     assign == null ?
                         null :
-                        new AssignNode(new IdNode(name.Name, name.LexLoc), assign.Expr);
+                        new AssignNode(new IdNode(name.Name, name.LexLoc), assign.Expr, name.LexLoc);
                 Name = name;
             }
         }
 
+        public LexLocation LexLoc { get; set; }
+
         public List<Decl> DeclsList { get; set; }
 
-        public DeclList(DeclId name, DeclAssign assign)
+        public DeclList(DeclId name, DeclAssign assign, LexLocation lexLoc)
         {
+            LexLoc = lexLoc;
             DeclsList = new List<Decl>();
-            DeclsList.Add(new Decl(name, assign));
+            DeclsList.Add(new Decl(name, assign, name.LexLoc));
         }
 
         public void Add(DeclId name, DeclAssign assign)
         {
-            DeclsList.Add(new Decl(name, assign));
+            DeclsList.Add(new Decl(name, assign, name.LexLoc));
         }
 }
 
     public class FunHeader
     {
+        public LexLocation LexLoc { get; set; }
+
         public Symbol.ValueType Type { get; set; }
 
         public string Name { get; set; }
 
         public FormalParams Args { get; set; }
 
-        public FunHeader(DeclType type, DeclId name, FormalParams args)
+        public FunHeader(DeclType type, DeclId name, FormalParams args, LexLocation lexLoc)
         {
+            LexLoc = lexLoc;
             if (args == null)
             {
                 args = new FormalParams();
@@ -64,10 +70,13 @@ namespace ProgramTree
 
     public class DeclAssign
     {
+        public LexLocation LexLoc { get; set; }
+
         public ExprNode Expr { get; set; }
 
-        public DeclAssign(ExprNode expr)
+        public DeclAssign(ExprNode expr, LexLocation lexLoc)
         {
+            LexLoc = lexLoc;
             Expr = expr;
         }
     }
@@ -76,22 +85,27 @@ namespace ProgramTree
     {
         public class FormalParam
         {
+            public LexLocation LexLoc;
+
             public Symbol.ValueType Type { get; set; }
 
             public DeclId Name { get; set; }
 
-            public FormalParam(DeclType type, DeclId name)
+            public FormalParam(DeclType type, DeclId name, LexLocation lexLoc)
             {
+                LexLoc = lexLoc;
                 Type = type.Type;
                 Name = name;
             }
         }
 
+        public LexLocation LexLoc;
+
         public List<FormalParam> FormalParamList = new List<FormalParam>();
 
-        public FormalParams(DeclType type, DeclId name)
+        public FormalParams(DeclType type, DeclId name, LexLocation lexLoc)
         {
-            FormalParamList.Add(new FormalParam(type, name));
+            FormalParamList.Add(new FormalParam(type, name, name.LexLoc));
         }
 
         public FormalParams()
@@ -101,7 +115,7 @@ namespace ProgramTree
 
         public void Add(DeclType type, DeclId name)
         {
-            FormalParamList.Add(new FormalParam(type, name));
+            FormalParamList.Add(new FormalParam(type, name, name.LexLoc));
         }
     }
 
@@ -117,8 +131,8 @@ namespace ProgramTree
             Symbol t = ParserHelper.GlobalTable.Get(type);
             if (!(t is TypeSymbol))
             {
-                throw new SemanticExepction("Недопустимый тип аргумента " + Type + 
-                    ". Строка " + lexLoc.StartLine + ", столбец " + lexLoc.StartColumn);
+                throw new SemanticExepction("Недопустимый тип аргумента " + Type 
+                    + ". Строка " + LexLoc.StartLine + ", столбец " + LexLoc.StartColumn);
             }
             Type = (t as TypeSymbol).Value;
         }
@@ -140,6 +154,13 @@ namespace ProgramTree
 
     public abstract class Node // базовый класс для всех узлов    
     {
+        public LexLocation LexLoc { get; set; }
+
+        public Node(LexLocation lexLoc)
+        {
+            LexLoc = lexLoc;
+        }
+
         public abstract T Visit<T>(Visitor<T> v);
     }
 
@@ -185,12 +206,7 @@ namespace ProgramTree
 
     public abstract class ExprNode : Node // базовый класс для всех выражений
     {
-        public LexLocation LexLoc { get; set; }
-
-        public ExprNode(LexLocation lexLoc)
-        {
-            LexLoc = lexLoc;
-        }
+        public ExprNode(LexLocation lexLoc) : base(lexLoc) { }
     }
 
     public class IdNode : ExprNode
@@ -286,6 +302,7 @@ namespace ProgramTree
 
     public abstract class StatementNode : Node // базовый класс для всех операторов
     {
+        public StatementNode(LexLocation lexLoc) : base(lexLoc) { }
     }
 
     public class AssignNode : StatementNode
@@ -296,7 +313,7 @@ namespace ProgramTree
 
         public AssignType AssOp { get; set; }
 
-        public AssignNode(IdNode id, ExprNode expr, AssignType assop = AssignType.Assign)
+        public AssignNode(IdNode id, ExprNode expr, LexLocation lexLoc, AssignType assop = AssignType.Assign) : base(lexLoc)
         {
             Id = id;
             Expr = expr;
@@ -317,7 +334,7 @@ namespace ProgramTree
 
         public StatementNode StatElse { get; set; }
 
-        public CondNode(ExprNode expr, StatementNode statIf, StatementNode statElse)
+        public CondNode(ExprNode expr, StatementNode statIf, StatementNode statElse, LexLocation lexLoc) : base(lexLoc)
         {
             Expr = expr;
             StatIf = statIf;
@@ -334,7 +351,7 @@ namespace ProgramTree
     {
         public List<StatementNode> StList = new List<StatementNode>();
 
-        public BlockNode(StatementNode stat)
+        public BlockNode(StatementNode stat, LexLocation lexLoc) : base(lexLoc)
         {
             if (stat != null)
             {
@@ -358,7 +375,7 @@ namespace ProgramTree
     {
         public FunCallNode FunCall { get; set; }
 
-        public ProcCallNode(FunCallNode funCall)
+        public ProcCallNode(FunCallNode funCall, LexLocation lexLoc) : base(lexLoc)
         {
             FunCall = funCall;
         }
@@ -394,15 +411,13 @@ namespace ProgramTree
     }
 
     public class DeclNode : StatementNode {
-        
-        public LexLocation LexLoc { get; set; }
 
         public Symbol.ValueType Type { set; get; }
 
         public DeclList DeclsList { get; set; }
 
-        public DeclNode(DeclType type, DeclList declsList) {
-            LexLoc = type.LexLoc;
+        public DeclNode(DeclType type, DeclList declsList, LexLocation lexLoc) : base(lexLoc)
+        {
             Type = type.Type;
             DeclsList = declsList;
         }
@@ -417,7 +432,7 @@ namespace ProgramTree
     {
         public ExprNode Expr { get; set; }
 
-        public ReturnNode(ExprNode expr)
+        public ReturnNode(ExprNode expr, LexLocation lexLoc) : base(lexLoc)
         {
             Expr = expr;
         }
@@ -435,7 +450,7 @@ namespace ProgramTree
 
         public StatementNode Stat { get; set; }
 
-        public WhileNode(ExprNode expr, StatementNode stat)
+        public WhileNode(ExprNode expr, StatementNode stat, LexLocation lexLoc) : base(lexLoc)
         {
             Expr = expr;
             Stat = stat;
@@ -454,7 +469,7 @@ namespace ProgramTree
 
         public StatementNode Stat { get; set; }
 
-        public DoWhileNode(ExprNode expr, StatementNode stat)
+        public DoWhileNode(ExprNode expr, StatementNode stat, LexLocation lexLoc) : base(lexLoc)
         {
             Expr = expr;
             Stat = stat;
@@ -476,17 +491,17 @@ namespace ProgramTree
 
         public StatementNode Stat { get; set; }
 
-        public ForNode(StatementNode init, ExprNode cond, StatementNode iter, StatementNode stat)
+        public ForNode(StatementNode init, ExprNode cond, StatementNode iter, StatementNode stat, LexLocation lexLoc) : base(lexLoc)
         {
             if (!(init is DeclNode || init is AssignNode))
             {
-                throw new SemanticExepction("Invalid initialization section in \'for\' cycle");
+                throw new SemanticExepction("Invalid initialization section in \'for\' cycle", this);
             }
             Init = init;
             Cond = cond;
             if (!(iter is ProcCallNode || iter is AssignNode))
             {
-                throw new SemanticExepction("Invalid iteration section in \'for\' cycle");
+                throw new SemanticExepction("Invalid iteration section in \'for\' cycle", this);
             }
             Iter = iter;
             Stat = stat;

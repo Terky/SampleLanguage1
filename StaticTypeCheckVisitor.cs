@@ -53,8 +53,8 @@ namespace SimpleLang
                     returnType = stat.Visit(this);
                     if (funType != returnType)
                     {
-                        throw new IncompatibleTypesException("Несоответствие возвращаемого и указанного типа в функции " + node.Header.Name
-                            + ". Строка " + stat.LexLoc.StartLine + ", столбец " + returnExpr.LexLoc.StartColumn);
+                        throw new IncompatibleTypesException(
+                            "Несоответствие возвращаемого и указанного типа в функции " + node.Header.Name, node);
                     }
                 }
                 else
@@ -64,8 +64,7 @@ namespace SimpleLang
             }
             if (!hasReturn && node.Header.Type != Symbol.ValueType.VOID)
             {
-                throw new SemanticExepction("Пропущено выражение return в функции " + node.Header.Name
-                    + ". Строка " + node.LexLoc.StartLine + ", столбец " + node.LexLoc.StartColumn);
+                throw new SemanticExepction("Пропущено выражение return в функции " + node.Header.Name, node);
             }
             return returnType;
         }
@@ -78,8 +77,7 @@ namespace SimpleLang
             if (idType != exprType)
             {
                 throw new IncompatibleTypesException("Incompatible assign types: " +
-                    idType + " and " + exprType
-                    + ". Строка " + node.Id.LexLoc.StartLine + ", столбец " + node.Id.LexLoc.StartColumn);
+                    idType + " and " + exprType, node);
             }
             return Symbol.ValueType.NOT_A_TYPE;
         }
@@ -108,8 +106,7 @@ namespace SimpleLang
             {
                 //TODO: сделать новый класс исключений для подобного?
                 throw new IncompatibleTypesException("Не удалось преобразовать тип " +
-                    exprType + " к BOOL"
-                    + ". Строка " + node.Expr.LexLoc.StartLine + ", столбец " + node.Expr.LexLoc.StartColumn);
+                    exprType + " к BOOL", node);
             }
             node.StatIf.Visit(this);
             if (node.StatElse != null)
@@ -125,8 +122,7 @@ namespace SimpleLang
         {
             if (node.Type == Symbol.ValueType.VOID)
             {
-                throw new SemanticExepction("Использование типа void в данном контексте недопустимо"
-                    + ". Строка " + node.LexLoc.StartLine + ", столбец " + node.LexLoc.StartColumn);
+                throw new SemanticExepction("Использование типа void в данном контексте недопустимо", node);
             }
             foreach (var decl in node.DeclsList.DeclsList)
             {
@@ -157,23 +153,23 @@ namespace SimpleLang
 
         public override Symbol.ValueType Visit(BoolNode node)
         {
-            returner.Value = new VarSymbol(Symbol.ValueType.BOOL);
+            return Symbol.ValueType.BOOL;
         }
 
         public override Symbol.ValueType Visit(DoubleNumNode node)
         {
-            returner.Value = new VarSymbol(Symbol.ValueType.DOUBLE);
+            return Symbol.ValueType.DOUBLE;
         }
 
         public override Symbol.ValueType Visit(IntNumNode node)
         {
-            returner.Value = new VarSymbol(Symbol.ValueType.INT);
+            return Symbol.ValueType.INT;
         }
 
         public override Symbol.ValueType Visit(IdNode node)
         {
             VarSymbol sym = ParserHelper.TopTable().Get(node.Name) as VarSymbol;
-            returner.Value = new VarSymbol(sym.Type);
+            return sym.Type;
         }
 
         public override Symbol.ValueType Visit(UnExprNode node)
@@ -181,18 +177,16 @@ namespace SimpleLang
             switch (node.Op)
             {
                 case OpType.Not:
-                    node.Expr.Visit(this);
-                    Symbol.ValueType exprType = returner.Value.Type;
+                    Symbol.ValueType exprType = node.Expr.Visit(this);
                     if (exprType != Symbol.ValueType.BOOL)
                     {
-                        throw new IncompatibleTypesException("Несоответствие типов, оператор !"
-                            + ". Строка " + node.LexLoc.StartLine + ", столбец " + node.LexLoc.StartColumn);
+                        throw new IncompatibleTypesException("Несоответствие типов, оператор !", node);
                     }
-                    returner.Value = new VarSymbol(Symbol.ValueType.BOOL);
-                    break;
+                    return Symbol.ValueType.BOOL;
                 default:
                     break;
             }
+            return Symbol.ValueType.UNKNOWN;
         }
 
         public override Symbol.ValueType Visit(FunCallNode node)
@@ -200,35 +194,34 @@ namespace SimpleLang
             Symbol sym = ParserHelper.GlobalTable.Get(node.Name);
             if (!(sym is FunSymbol))
             {
-                throw new SemanticExepction(node.Name + " не является именем функции"
-                    + ". Строка " + node.LexLoc.StartLine + ", столбец " + node.LexLoc.StartColumn);
+                throw new SemanticExepction(node.Name + " не является именем функции", node);
             }
             FunSymbol fun = sym as FunSymbol;
             FormalParams args = fun.Address.Header.Args;
             if (args.FormalParamList.Count != node.ActualParams.Count)
             {
-                throw new SemanticExepction("Неверное количество параметров при вызове функции " + node.Name
-                    + ". Строка " + node.LexLoc.StartLine + ", столбец " + node.LexLoc.StartColumn);
+                throw new SemanticExepction("Неверное количество параметров при вызове функции " + node.Name, node);
             }
             List<Symbol.ValueType> argsType = new List<Symbol.ValueType>();
             foreach (ExprNode expr in node.ActualParams)
             {
-                expr.Visit(this);
-                argsType.Add(returner.Value.Type);
+                argsType.Add(expr.Visit(this));
             }
             for (int i = 0; i < args.FormalParamList.Count; ++i)
             {
                 if (argsType[i] != args.FormalParamList[i].Type)
                 {
-                    throw new IncompatibleTypesException("Несоответствие типов в параметре " + args.FormalParamList[i].Name + " функции " + node.Name
-                        + ". Строка " + node.LexLoc.StartLine + ", столбец " + node.LexLoc.StartColumn);
+                    throw new IncompatibleTypesException("Несоответствие типов в параметре " 
+                        + args.FormalParamList[i].Name + " функции " + node.Name, node);
                 }
             }
+            return fun.Type;
         }
 
         public override Symbol.ValueType Visit(ProcCallNode node)
         {
             node.FunCall.Visit(this);
+            return Symbol.ValueType.NOT_A_TYPE;
         }
 
         public override Symbol.ValueType Visit(WhileNode node)
@@ -236,15 +229,14 @@ namespace SimpleLang
             var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
 
-            node.Expr.Visit(this);
-            if (returner.Value.Type != Symbol.ValueType.BOOL)
+            if (node.Expr.Visit(this) != Symbol.ValueType.BOOL)
             {
-                throw new IncompatibleTypesException("Несоответствие типов в выражении для цикла while"
-                    + ". Строка " + node.Expr.LexLoc.StartLine + ", столбец " + node.Expr.LexLoc.StartColumn);
+                throw new IncompatibleTypesException("Несоответствие типов в выражении для цикла while", node);
             }
             node.Stat.Visit(this);
 
             ParserHelper.Stack.Peek().TopTable = savedTable;
+            return Symbol.ValueType.NOT_A_TYPE;
         }
 
         public override Symbol.ValueType Visit(DoWhileNode node)
@@ -253,14 +245,13 @@ namespace SimpleLang
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
 
             node.Stat.Visit(this);
-            node.Expr.Visit(this);
-            if (returner.Value.Type != Symbol.ValueType.BOOL)
+            if (node.Expr.Visit(this) != Symbol.ValueType.BOOL)
             {
-                throw new IncompatibleTypesException("Несоответствие типов в выражении для цикла do while"
-                    + ". Строка " + node.Expr.LexLoc.StartLine + ", столбец " + node.Expr.LexLoc.StartColumn);
+                throw new IncompatibleTypesException("Несоответствие типов в выражении для цикла do while", node);
             }
 
             ParserHelper.Stack.Peek().TopTable = savedTable;
+            return Symbol.ValueType.NOT_A_TYPE;
         }
 
         public override Symbol.ValueType Visit(ForNode node)
@@ -269,24 +260,21 @@ namespace SimpleLang
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
 
             node.Init.Visit(this);
-            node.Cond.Visit(this);
-            if (returner.Value.Type != Symbol.ValueType.BOOL)
+            if (node.Cond.Visit(this) != Symbol.ValueType.BOOL)
             {
-                throw new IncompatibleTypesException("Несоответствие типов в выражении для цикла for"
-                    + ". Строка " + node.Cond.LexLoc.StartLine + ", столбец " + node.Cond.LexLoc.StartColumn);
+                throw new IncompatibleTypesException("Несоответствие типов в выражении для цикла for", node);
             }
             node.Stat.Visit(this);
             node.Iter.Visit(this);
 
             ParserHelper.Stack.Peek().TopTable = savedTable;
+            return Symbol.ValueType.NOT_A_TYPE;
         }
 
         public override Symbol.ValueType Visit(BinExprNode node)
         {
-            node.Left.Visit(this);
-            Symbol.ValueType leftType = returner.Value.Type;
-            node.Right.Visit(this);
-            Symbol.ValueType rightType = returner.Value.Type;
+            Symbol.ValueType leftType = node.Left.Visit(this);
+            Symbol.ValueType rightType = node.Right.Visit(this);
 
             if (leftType != rightType)
             {
@@ -298,8 +286,7 @@ namespace SimpleLang
                 }
                 else
                 {
-                    throw new IncompatibleTypesException("Несоответствие типов, оператор " + node.Op.ToString()
-                        + ". Строка " + node.LexLoc.StartLine + ", столбец " + node.LexLoc.StartColumn);
+                    throw new IncompatibleTypesException("Несоответствие типов, оператор " + node.Op.ToString(), node);
                 }
             }
 
@@ -311,43 +298,36 @@ namespace SimpleLang
                 case OpType.Div:
                     if (leftType != Symbol.ValueType.INT && leftType != Symbol.ValueType.DOUBLE)
                     {
-                        throw new SemanticExepction("Оператор " + node.Op.ToString() + " применяется к неподходящим типам"
-                            + ". Строка " + node.LexLoc.StartLine + ", столбец " + node.LexLoc.StartColumn);
+                        throw new SemanticExepction("Оператор " + node.Op.ToString() + " применяется к неподходящим типам", node);
                     }
-                    returner.Value = new VarSymbol(leftType);
-                    break;
+                    return leftType;
                 case OpType.Gt:
                 case OpType.Lt:
                 case OpType.Get:
                 case OpType.Let:
                     if (leftType != Symbol.ValueType.INT && leftType != Symbol.ValueType.DOUBLE)
                     {
-                        throw new SemanticExepction("Оператор " + node.Op.ToString() + " применяется к неподходящим типам"
-                            + ". Строка " + node.LexLoc.StartLine + ", столбец " + node.LexLoc.StartColumn);
+                        throw new SemanticExepction("Оператор " + node.Op.ToString() + " применяется к неподходящим типам", node);
                     }
-                    returner.Value = new VarSymbol(Symbol.ValueType.BOOL);
-                    break;
+                    return Symbol.ValueType.BOOL;
                 case OpType.Eq:
                 case OpType.Neq:
                     if (leftType != Symbol.ValueType.INT && leftType != Symbol.ValueType.DOUBLE && leftType != Symbol.ValueType.BOOL)
                     {
-                        throw new SemanticExepction("Оператор " + node.Op.ToString() + " применяется к неподходящим типам"
-                            + ". Строка " + node.LexLoc.StartLine + ", столбец " + node.LexLoc.StartColumn);
+                        throw new SemanticExepction("Оператор " + node.Op.ToString() + " применяется к неподходящим типам", node);
                     }
-                    returner.Value = new VarSymbol(Symbol.ValueType.BOOL);
-                    break;
+                    return Symbol.ValueType.BOOL;
                 case OpType.Or:
                 case OpType.And:
                     if (leftType != Symbol.ValueType.BOOL)
                     {
-                        throw new SemanticExepction("Оператор " + node.Op.ToString() + " применяется к неподходящим типам"
-                            + ". Строка " + node.LexLoc.StartLine + ", столбец " + node.LexLoc.StartColumn);
+                        throw new SemanticExepction("Оператор " + node.Op.ToString() + " применяется к неподходящим типам", node);
                     }
-                    returner.Value = new VarSymbol(Symbol.ValueType.BOOL);
-                    break;
+                    return Symbol.ValueType.BOOL;
                 default:
                     break;
             }
+            return Symbol.ValueType.UNKNOWN;
         }
     }
 }

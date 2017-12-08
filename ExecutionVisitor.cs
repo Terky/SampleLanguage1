@@ -8,14 +8,8 @@ using BinExprExecutionHelper;
 
 namespace SimpleLang
 {
-    public class ExecutionVisitor : Visitor
+    public class ExecutionVisitor : Visitor<VarSymbol>
     {
-
-        public ExecutionVisitor()
-        {
-            returner = new Returner();
-        }
-
         public enum State
         {
             RETURN,
@@ -23,8 +17,6 @@ namespace SimpleLang
         }
 
         private State execState = State.RUN;
-
-        public Returner returner { get; set; }
 
         public State ExecState
         {
@@ -39,31 +31,32 @@ namespace SimpleLang
             }
         }
 
-        public override void Visit(MainProgramNode node)
+        public override VarSymbol Visit(MainProgramNode node)
         {
             ParserHelper.Stack.Push(new SymbolsRecord());
-            node.FunList[node.FunList.Count - 1].Visit(this);
+            VarSymbol result = node.FunList[node.FunList.Count - 1].Visit(this);
             ParserHelper.Stack.Pop();
+            return result;
         }
 
-        public override void Visit(AssignNode node)
+        public override VarSymbol Visit(AssignNode node)
         {
             VarSymbol leftValue = ParserHelper.TopTable().Get(node.Id.Name) as VarSymbol;
-            node.Expr.Visit(this);
-            VarSymbol.VarValue exprVal = returner.Value.Value;
-            leftValue.Value = exprVal;
+            leftValue.Value = node.Expr.Visit(this).Value;
             Console.WriteLine("{0} := int: {1}, double: {2}, bool: {3}",
                 node.Id.Name, leftValue.Value.iValue, leftValue.Value.dValue, leftValue.Value.bValue);
+            return null;
         }
 
-        public override void Visit(BlockNode node)
+        public override VarSymbol Visit(BlockNode node)
         {
             var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
 
+            VarSymbol returnValue = null;
             foreach (StatementNode st in node.StList)
             {
-                st.Visit(this);
+                returnValue = st.Visit(this);
                 if (ExecState == State.RETURN)
                 {
                     break;
@@ -71,9 +64,10 @@ namespace SimpleLang
             }
 
             ParserHelper.Stack.Peek().TopTable = savedTable;
+            return returnValue;
         }
 
-        public override void Visit(DeclNode node)
+        public override VarSymbol Visit(DeclNode node)
         {
             foreach (var decl in node.DeclsList.DeclsList)
             {
@@ -85,118 +79,122 @@ namespace SimpleLang
                     decl.Assign.Visit(this);
                 }
             }
+            return null;
         }
 
-        public override void Visit(FunNode node)
+        public override VarSymbol Visit(FunNode node)
         {
-            node.Body.Visit(this);
+            VarSymbol result = node.Body.Visit(this);
             ExecState = State.RUN;
+            return result;
         }
 
-        public override void Visit(ReturnNode node)
+        public override VarSymbol Visit(ReturnNode node)
         {
+            VarSymbol toReturn;
             if (node.Expr == null)
             {
-                returner.Value = new VarSymbol(Symbol.ValueType.VOID);
+                toReturn = new VarSymbol(Symbol.ValueType.VOID);
             } else
             {
-                node.Expr.Visit(this);
+                toReturn = node.Expr.Visit(this);
             }
             ExecState = State.RETURN;
+            return toReturn;
         }
 
-        public override void Visit(BoolNode node)
+        public override VarSymbol Visit(BoolNode node)
         {
-            returner.Value = new VarSymbol(node.Val);
+            return new VarSymbol(node.Val);
         }
 
-        public override void Visit(IntNumNode node)
+        public override VarSymbol Visit(IntNumNode node)
         {
-            returner.Value = new VarSymbol(node.Num);
+            return new VarSymbol(node.Num);
         }
 
-        public override void Visit(DoubleNumNode node)
+        public override VarSymbol Visit(DoubleNumNode node)
         {
-            returner.Value = new VarSymbol(node.Num);
+            return new VarSymbol(node.Num);
         }
 
-        public override void Visit(IdNode node)
+        public override VarSymbol Visit(IdNode node)
         {
             VarSymbol s = ParserHelper.TopTable().Get(node.Name) as VarSymbol;
-            returner.Value = s;
+            return s;
         }
 
-        public override void Visit(UnExprNode node)
+        public override VarSymbol Visit(UnExprNode node)
         {
-            node.Expr.Visit(this);
             switch(node.Op)
             {
                 case OpType.Not:
-                    returner.Value = new VarSymbol(!returner.Value.Value.bValue);
-                    break;
+                    return new VarSymbol(!node.Expr.Visit(this).Value.bValue);
                 default:
-                    throw new SemanticExepction("Неизвестный унарный оператор");
+                    throw new SemanticExepction("Неизвестный унарный оператор", node);
             }
         }
 
-        public override void Visit(CondNode node)
+        public override VarSymbol Visit(CondNode node)
         {
             var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
 
-            node.Expr.Visit(this);
-            if (returner.Value.Value.bValue)
+            VarSymbol toReturn = null;
+            if (node.Expr.Visit(this).Value.bValue)
             {
-                node.StatIf.Visit(this);
+                toReturn = node.StatIf.Visit(this);
             } else
             {
                 if (node.StatElse != null)
                 {
-                    node.StatElse.Visit(this);
+                    toReturn = node.StatElse.Visit(this);
                 }
             }
 
             ParserHelper.Stack.Peek().TopTable = savedTable;
+            return toReturn;
         }
 
-        public override void Visit(WhileNode node)
+        public override VarSymbol Visit(WhileNode node)
         {
             var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
 
-            node.Expr.Visit(this);
-            while (returner.Value.Value.bValue)
+            VarSymbol toReturn = null;
+            while (node.Expr.Visit(this).Value.bValue)
             {
-                node.Stat.Visit(this);
+                toReturn = node.Stat.Visit(this);
                 if (ExecState == State.RETURN)
                 {
                     break;
                 }
-                node.Expr.Visit(this);
             }
 
             ParserHelper.Stack.Peek().TopTable = savedTable;
+            return toReturn;
         }
 
-        public override void Visit(DoWhileNode node)
+        public override VarSymbol Visit(DoWhileNode node)
         {
             var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
 
+            VarSymbol toReturn = null;
             do
             {
-                node.Stat.Visit(this);
+                toReturn = node.Stat.Visit(this);
                 if (ExecState == State.RETURN)
                 {
                     break;
                 }
-                node.Expr.Visit(this);
-            } while (returner.Value.Value.bValue);
+            } while (node.Expr.Visit(this).Value.bValue);
 
             ParserHelper.Stack.Peek().TopTable = savedTable;
+            return toReturn;
         }
 
-        public override void Visit(ForNode node)
+        public override VarSymbol Visit(ForNode node)
         {
             var savedTable = ParserHelper.TopTable();
             ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
@@ -213,31 +211,29 @@ namespace SimpleLang
                 initVar = ParserHelper.TopTable().Get((node.Init as AssignNode).Id.Name) as VarSymbol;
             }
 
-            node.Cond.Visit(this);
-            VarSymbol condVal = returner.Value;
-            while (condVal.Value.bValue)
+            VarSymbol toReturn = null;
+            while (node.Cond.Visit(this).Value.bValue)
             {
-                node.Stat.Visit(this);
+                toReturn = node.Stat.Visit(this);
                 if (ExecState == State.RETURN)
                 {
                     break;
                 }
                 node.Iter.Visit(this);
-                node.Cond.Visit(this);
             }
 
             ParserHelper.Stack.Peek().TopTable = savedTable;
+            return toReturn;
         }
 
-        public override void Visit(FunCallNode node)
+        public override VarSymbol Visit(FunCallNode node)
         {
             FunSymbol fun = ParserHelper.GlobalTable.Get(node.Name) as FunSymbol;
             FormalParams args = fun.Address.Header.Args;
             List<VarSymbol> callArgs = new List<VarSymbol>();
             foreach (ExprNode expr in node.ActualParams)
             {
-                expr.Visit(this);
-                callArgs.Add(returner.Value);
+                callArgs.Add(expr.Visit(this));
             }
 
             ParserHelper.Stack.Push(new SymbolsRecord());
@@ -245,21 +241,21 @@ namespace SimpleLang
             {
                 ParserHelper.TopTable().Put(args.FormalParamList[i].Name.Name, callArgs[i]);
             }
-            fun.Address.Visit(this);
+            VarSymbol toReturn = fun.Address.Visit(this);
             ParserHelper.Stack.Pop();
+            return toReturn;
         }
 
-        public override void Visit(ProcCallNode node)
+        public override VarSymbol Visit(ProcCallNode node)
         {
             node.FunCall.Visit(this);
+            return null;
         }
 
-        public override void Visit(BinExprNode node)
+        public override VarSymbol Visit(BinExprNode node)
         {
-            node.Left.Visit(this);
-            VarSymbol leftValue = returner.Value;
-            node.Right.Visit(this);
-            VarSymbol rightValue = returner.Value;
+            VarSymbol leftValue = node.Left.Visit(this);
+            VarSymbol rightValue = node.Right.Visit(this);
             if (leftValue.Type == Symbol.ValueType.INT && rightValue.Type == Symbol.ValueType.DOUBLE)
             {
                 leftValue = ParserHelper.upCast(leftValue, Symbol.ValueType.DOUBLE);
@@ -309,9 +305,9 @@ namespace SimpleLang
                     op = new NeqOp();
                     break;
                 default:
-                    throw new SemanticExepction("Неизвестный бинарный оператор");
+                    throw new SemanticExepction("Неизвестный бинарный оператор", node);
             }
-            returner.Value = op.Calculate(leftValue, rightValue);
+            return op.Calculate(leftValue, rightValue);
         }
     }
 }
