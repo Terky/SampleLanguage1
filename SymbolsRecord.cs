@@ -13,7 +13,7 @@ namespace SimpleLang
 
         public SymbolsRecord()
         {
-            BottomTable = ParserHelper.GlobalTable;
+            BottomTable = ParserHelper.GlobalScope;
             TopTable = new SymbolTable(BottomTable);
         }
     }

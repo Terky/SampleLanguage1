@@ -47,7 +47,7 @@
     <Compile Include="BinExprExecutionHelper.cs" />
     <Compile Include="ExecutionVisitor.cs" />
     <Compile Include="FunSymbol.cs" />
-    <Compile Include="StaticTypeCheckVisitor.cs" />
+    <Compile Include="StaticCheckVisitor.cs" />
     <Compile Include="Symbol.cs" />
     <Compile Include="SymbolsRecord.cs" />
     <Compile Include="SymbolTable.cs" />

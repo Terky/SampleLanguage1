@@ -33,15 +33,15 @@ namespace SimpleLang
 
         public override VarSymbol Visit(MainProgramNode node)
         {
-            ParserHelper.Stack.Push(new SymbolsRecord());
+            ParserHelper.enterFun(); 
             VarSymbol result = node.FunList[node.FunList.Count - 1].Visit(this);
-            ParserHelper.Stack.Pop();
+            ParserHelper.leaveFun();
             return result;
         }
 
         public override VarSymbol Visit(AssignNode node)
         {
-            VarSymbol leftValue = ParserHelper.TopTable().Get(node.Id.Name) as VarSymbol;
+            VarSymbol leftValue = ParserHelper.CurrentScope().Get(node.Id.Name) as VarSymbol;
             leftValue.Value = node.Expr.Visit(this).Value;
             Console.WriteLine("{0} := int: {1}, double: {2}, bool: {3}",
                 node.Id.Name, leftValue.Value.iValue, leftValue.Value.dValue, leftValue.Value.bValue);
@@ -50,8 +50,7 @@ namespace SimpleLang
 
         public override VarSymbol Visit(BlockNode node)
         {
-            var savedTable = ParserHelper.TopTable();
-            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
+            ParserHelper.enterScope();
 
             VarSymbol returnValue = null;
             foreach (StatementNode st in node.StList)
@@ -63,17 +62,17 @@ namespace SimpleLang
                 }
             }
 
-            ParserHelper.Stack.Peek().TopTable = savedTable;
+            ParserHelper.leaveScope();
             return returnValue;
         }
 
         public override VarSymbol Visit(DeclNode node)
         {
-            foreach (var decl in node.DeclsList.DeclsList)
+            foreach (var decl in node.DeclsList.Decls)
             {
                 VarSymbol s = new VarSymbol();
                 s.Type = node.Type;
-                ParserHelper.TopTable().Put(decl.Name.Name, s);
+                ParserHelper.CurrentScope().Put(decl.Id.Name, s);
                 if (decl.Assign != null)
                 {
                     decl.Assign.Visit(this);
@@ -120,7 +119,7 @@ namespace SimpleLang
 
         public override VarSymbol Visit(IdNode node)
         {
-            VarSymbol s = ParserHelper.TopTable().Get(node.Name) as VarSymbol;
+            VarSymbol s = ParserHelper.CurrentScope().Get(node.Name) as VarSymbol;
             return s;
         }
 
@@ -137,8 +136,7 @@ namespace SimpleLang
 
         public override VarSymbol Visit(CondNode node)
         {
-            var savedTable = ParserHelper.TopTable();
-            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
+            ParserHelper.enterScope();
 
             VarSymbol toReturn = null;
             if (node.Expr.Visit(this).Value.bValue)
@@ -152,14 +150,13 @@ namespace SimpleLang
                 }
             }
 
-            ParserHelper.Stack.Peek().TopTable = savedTable;
+            ParserHelper.leaveScope();
             return toReturn;
         }
 
         public override VarSymbol Visit(WhileNode node)
         {
-            var savedTable = ParserHelper.TopTable();
-            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
+            ParserHelper.enterScope();
 
             VarSymbol toReturn = null;
             while (node.Expr.Visit(this).Value.bValue)
@@ -171,14 +168,13 @@ namespace SimpleLang
                 }
             }
 
-            ParserHelper.Stack.Peek().TopTable = savedTable;
+            ParserHelper.leaveScope();
             return toReturn;
         }
 
         public override VarSymbol Visit(DoWhileNode node)
         {
-            var savedTable = ParserHelper.TopTable();
-            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
+            ParserHelper.enterScope();
 
             VarSymbol toReturn = null;
             do
@@ -190,26 +186,17 @@ namespace SimpleLang
                 }
             } while (node.Expr.Visit(this).Value.bValue);
 
-            ParserHelper.Stack.Peek().TopTable = savedTable;
+            ParserHelper.leaveScope();
             return toReturn;
         }
 
         public override VarSymbol Visit(ForNode node)
         {
-            var savedTable = ParserHelper.TopTable();
-            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
+            ParserHelper.enterScope();
 
             node.Init.Visit(this);
             VarSymbol initVar = null;
-            if (node.Init is DeclNode)
-            {
-                initVar = ParserHelper.TopTable().Get((node.Init as DeclNode).DeclsList.DeclsList[0].Name.Name) as VarSymbol;
-
-            }
-            else
-            {
-                initVar = ParserHelper.TopTable().Get((node.Init as AssignNode).Id.Name) as VarSymbol;
-            }
+            initVar = ParserHelper.CurrentScope().Get(node.Init.Name) as VarSymbol;
 
             VarSymbol toReturn = null;
             while (node.Cond.Visit(this).Value.bValue)
@@ -222,13 +209,13 @@ namespace SimpleLang
                 node.Iter.Visit(this);
             }
 
-            ParserHelper.Stack.Peek().TopTable = savedTable;
+            ParserHelper.leaveScope();
             return toReturn;
         }
 
         public override VarSymbol Visit(FunCallNode node)
         {
-            FunSymbol fun = ParserHelper.GlobalTable.Get(node.Name) as FunSymbol;
+            FunSymbol fun = ParserHelper.GlobalScope.Get(node.Name) as FunSymbol;
             FormalParams args = fun.Address.Header.Args;
             List<VarSymbol> callArgs = new List<VarSymbol>();
             foreach (ExprNode expr in node.ActualParams)
@@ -239,7 +226,7 @@ namespace SimpleLang
             ParserHelper.Stack.Push(new SymbolsRecord());
             for (int i = 0; i < args.FormalParamList.Count; ++i)
             {
-                ParserHelper.TopTable().Put(args.FormalParamList[i].Name.Name, callArgs[i]);
+                ParserHelper.CurrentScope().Put(args.FormalParamList[i].Name.Name, callArgs[i]);
             }
             VarSymbol toReturn = fun.Address.Visit(this);
             ParserHelper.Stack.Pop();

@@ -34,6 +34,8 @@ namespace SimpleParser
     {
         private static Stack<SymbolsRecord> stack = new Stack<SymbolsRecord>();
 
+        private static Stack<SymbolTable> savedTables = new Stack<SymbolTable>();
+
         public static Stack<SymbolsRecord> Stack
         {
             get
@@ -45,7 +47,7 @@ namespace SimpleParser
         
         private static SymbolTable globalTable = new SymbolTable(null);
 
-        public static SymbolTable GlobalTable
+        public static SymbolTable GlobalScope
         {
             get
             {
@@ -58,22 +60,22 @@ namespace SimpleParser
             }
         }
 
-        public static SymbolTable TopTable()
+        public static SymbolTable CurrentScope()
         {
             return Stack.Peek().TopTable;
         }
 
-        public static SymbolTable BottomTable()
-        {
-            return Stack.Peek().BottomTable;
-        }
+        //public static SymbolTable BottomTable()
+        //{
+        //    return Stack.Peek().BottomTable;
+        //}
 
         static ParserHelper()
         {
-            GlobalTable.Put("int", new TypeSymbol(Symbol.ValueType.INT));
-            GlobalTable.Put("double", new TypeSymbol(Symbol.ValueType.DOUBLE));
-            GlobalTable.Put("bool", new TypeSymbol(Symbol.ValueType.BOOL));
-            GlobalTable.Put("void", new TypeSymbol(Symbol.ValueType.VOID));
+            GlobalScope.Put("int", new TypeSymbol(Symbol.ValueType.INT));
+            GlobalScope.Put("double", new TypeSymbol(Symbol.ValueType.DOUBLE));
+            GlobalScope.Put("bool", new TypeSymbol(Symbol.ValueType.BOOL));
+            GlobalScope.Put("void", new TypeSymbol(Symbol.ValueType.VOID));
         }
 
         public static VarSymbol upCast(VarSymbol value, Symbol.ValueType type)
@@ -91,6 +93,28 @@ namespace SimpleParser
                     break;
             }
             return res;
+        }
+
+        public static void leaveFun()
+        {
+            Stack.Pop();
+        }
+
+
+        public static void enterFun()
+        {
+            Stack.Push(new SymbolsRecord());
+        }
+
+        public static void enterScope()
+        {
+            savedTables.Push(CurrentScope());
+            Stack.Peek().TopTable = new SymbolTable(CurrentScope());
+        }
+
+        public static void leaveScope()
+        {
+            Stack.Peek().TopTable = savedTables.Pop();
         }
     }
 }

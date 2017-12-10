@@ -22,6 +22,7 @@
 			public List<ExprNode> eList;
 			public DeclAssign declAssign;
             public DeclList declList;
+			public ForNode.ForInitializer forInit;
        }
 
 %using ProgramTree;
@@ -35,7 +36,7 @@
 %token <sVal> ID
 
 %type <eVal> arithm_expr ident arithm_term arithm_factor function fun_list fun_call bool_expr bool_term bool_factor not_factor relation return_expr
-%type <stVal> assign statement decl return cond proc_call while_cycle do_while_cycle do_while_cycle for_cycle for_initializer for_statement 
+%type <stVal> assign statement decl return cond proc_call while_cycle do_while_cycle do_while_cycle for_cycle for_statement 
 %type <blVal> stlist block
 %type <fHead> fun_header
 %type <formParams> formal_params formal_params_fill
@@ -44,6 +45,7 @@
 %type <declType> type
 %type <declAssign> decl_assign
 %type <declList> decl_list
+%type <forInit> for_initializer
 %%
 
 progr
@@ -233,8 +235,8 @@ for_cycle
     ;
 
 for_initializer
-    : decl   { $$ = $1; }
-    | assign { $$ = $1; }
+    : decl   { $$ = new ForNode.ForInitializer($1, @$); }
+    | assign { $$ = new ForNode.ForInitializer($1, @$); }
     ;
 
 for_statement

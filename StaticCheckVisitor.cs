@@ -15,12 +15,10 @@ namespace SimpleLang
             foreach (FunNode fun in node.FunList)
             {
                 FunSymbol funSym = new FunSymbol(fun.Header.Type, fun);
-
-                ParserHelper.Stack.Push(new SymbolsRecord());
+                ParserHelper.enterFun();
                 fun.Visit(this);
-                ParserHelper.Stack.Pop();
+                ParserHelper.leaveFun();
             }
-
             return Symbol.ValueType.NOT_A_TYPE;
         }
 
@@ -31,7 +29,7 @@ namespace SimpleLang
             {
                 VarSymbol sym = new VarSymbol();
                 sym.Type = arg.Type;
-                ParserHelper.TopTable().Put(arg.Name.Name, sym);
+                ParserHelper.CurrentScope().Put(arg.Name.Name, sym);
             }
             bool hasReturn = false;
             Symbol.ValueType returnType = Symbol.ValueType.UNKNOWN;
@@ -84,23 +82,19 @@ namespace SimpleLang
 
         public override Symbol.ValueType Visit(BlockNode node)
         {
-            var savedTable = ParserHelper.TopTable();
-            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
-
+            ParserHelper.enterScope();
             foreach (StatementNode st in node.StList)
             {
                 st.Visit(this);
             }
-
-            ParserHelper.Stack.Peek().TopTable = savedTable;
+            ParserHelper.leaveScope();
             return Symbol.ValueType.NOT_A_TYPE;
         }
 
         public override Symbol.ValueType Visit(CondNode node)
         {
-            var savedTable = ParserHelper.TopTable();
-            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
-            
+            ParserHelper.enterScope();
+
             Symbol.ValueType exprType = node.Expr.Visit(this);
             if (exprType != Symbol.ValueType.BOOL)
             {
@@ -114,7 +108,7 @@ namespace SimpleLang
                 node.StatElse.Visit(this);
             }
 
-            ParserHelper.Stack.Peek().TopTable = savedTable;
+            ParserHelper.leaveScope();
             return Symbol.ValueType.NOT_A_TYPE;
         }
 
@@ -124,11 +118,11 @@ namespace SimpleLang
             {
                 throw new SemanticExepction("Использование типа void в данном контексте недопустимо", node);
             }
-            foreach (var decl in node.DeclsList.DeclsList)
+            foreach (var decl in node.DeclsList.Decls)
             {
                 VarSymbol s = new VarSymbol();
                 s.Type = node.Type;
-                ParserHelper.TopTable().Put(decl.Name.Name, s);
+                ParserHelper.CurrentScope().Put(decl.Id.Name, s);
                 if (decl.Assign != null)
                 {
                     decl.Assign.Visit(this);
@@ -168,7 +162,7 @@ namespace SimpleLang
 
         public override Symbol.ValueType Visit(IdNode node)
         {
-            VarSymbol sym = ParserHelper.TopTable().Get(node.Name) as VarSymbol;
+            VarSymbol sym = ParserHelper.CurrentScope().Get(node.Name) as VarSymbol;
             return sym.Type;
         }
 
@@ -191,7 +185,7 @@ namespace SimpleLang
 
         public override Symbol.ValueType Visit(FunCallNode node)
         {
-            Symbol sym = ParserHelper.GlobalTable.Get(node.Name);
+            Symbol sym = ParserHelper.GlobalScope.Get(node.Name);
             if (!(sym is FunSymbol))
             {
                 throw new SemanticExepction(node.Name + " не является именем функции", node);
@@ -202,11 +196,13 @@ namespace SimpleLang
             {
                 throw new SemanticExepction("Неверное количество параметров при вызове функции " + node.Name, node);
             }
+
             List<Symbol.ValueType> argsType = new List<Symbol.ValueType>();
             foreach (ExprNode expr in node.ActualParams)
             {
                 argsType.Add(expr.Visit(this));
             }
+
             for (int i = 0; i < args.FormalParamList.Count; ++i)
             {
                 if (argsType[i] != args.FormalParamList[i].Type)
@@ -226,8 +222,7 @@ namespace SimpleLang
 
         public override Symbol.ValueType Visit(WhileNode node)
         {
-            var savedTable = ParserHelper.TopTable();
-            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
+            ParserHelper.enterScope();
 
             if (node.Expr.Visit(this) != Symbol.ValueType.BOOL)
             {
@@ -235,14 +230,13 @@ namespace SimpleLang
             }
             node.Stat.Visit(this);
 
-            ParserHelper.Stack.Peek().TopTable = savedTable;
+            ParserHelper.leaveScope();
             return Symbol.ValueType.NOT_A_TYPE;
         }
 
         public override Symbol.ValueType Visit(DoWhileNode node)
         {
-            var savedTable = ParserHelper.TopTable();
-            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
+            ParserHelper.enterScope();
 
             node.Stat.Visit(this);
             if (node.Expr.Visit(this) != Symbol.ValueType.BOOL)
@@ -250,14 +244,13 @@ namespace SimpleLang
                 throw new IncompatibleTypesException("Несоответствие типов в выражении для цикла do while", node);
             }
 
-            ParserHelper.Stack.Peek().TopTable = savedTable;
+            ParserHelper.leaveScope();
             return Symbol.ValueType.NOT_A_TYPE;
         }
 
         public override Symbol.ValueType Visit(ForNode node)
         {
-            var savedTable = ParserHelper.TopTable();
-            ParserHelper.Stack.Peek().TopTable = new SymbolTable(ParserHelper.TopTable());
+            ParserHelper.enterScope();
 
             node.Init.Visit(this);
             if (node.Cond.Visit(this) != Symbol.ValueType.BOOL)
@@ -267,7 +260,7 @@ namespace SimpleLang
             node.Stat.Visit(this);
             node.Iter.Visit(this);
 
-            ParserHelper.Stack.Peek().TopTable = savedTable;
+            ParserHelper.leaveScope();
             return Symbol.ValueType.NOT_A_TYPE;
         }
 

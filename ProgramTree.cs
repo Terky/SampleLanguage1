@@ -16,7 +16,7 @@ namespace ProgramTree
         {
             public AssignNode Assign { get; set; }
 
-            public DeclId Name { get; set; }
+            public DeclId Id { get; set; }
 
             public Decl(DeclId name, DeclAssign assign, LexLocation lexLoc)
             {
@@ -24,24 +24,24 @@ namespace ProgramTree
                     assign == null ?
                         null :
                         new AssignNode(new IdNode(name.Name, name.LexLoc), assign.Expr, name.LexLoc);
-                Name = name;
+                Id = name;
             }
         }
 
         public LexLocation LexLoc { get; set; }
 
-        public List<Decl> DeclsList { get; set; }
+        public List<Decl> Decls { get; set; }
 
         public DeclList(DeclId name, DeclAssign assign, LexLocation lexLoc)
         {
             LexLoc = lexLoc;
-            DeclsList = new List<Decl>();
-            DeclsList.Add(new Decl(name, assign, name.LexLoc));
+            Decls = new List<Decl>();
+            Decls.Add(new Decl(name, assign, name.LexLoc));
         }
 
         public void Add(DeclId name, DeclAssign assign)
         {
-            DeclsList.Add(new Decl(name, assign, name.LexLoc));
+            Decls.Add(new Decl(name, assign, name.LexLoc));
         }
 }
 
@@ -128,7 +128,7 @@ namespace ProgramTree
         public DeclType(string type, LexLocation lexLoc)
         {
             LexLoc = lexLoc;
-            Symbol t = ParserHelper.GlobalTable.Get(type);
+            Symbol t = ParserHelper.GlobalScope.Get(type);
             if (!(t is TypeSymbol))
             {
                 throw new SemanticExepction("Недопустимый тип аргумента " + Type 
@@ -195,7 +195,7 @@ namespace ProgramTree
             Header = header;
             Body = body;
             FunSymbol funSymbol = new FunSymbol(header.Type, this);
-            ParserHelper.GlobalTable.Put(Header.Name, funSymbol);
+            ParserHelper.GlobalScope.Put(Header.Name, funSymbol);
         }
 
         public override T Visit<T>(Visitor<T> v)
@@ -483,7 +483,45 @@ namespace ProgramTree
 
     public class ForNode: StatementNode
     {
-        public StatementNode Init { get; set; }
+        public class ForInitializer: StatementNode
+        {
+            private DeclNode decl;
+            private AssignNode assign;
+            public string Name { get; set; }
+
+            public ForInitializer(StatementNode stat, LexLocation lexLoc) : base(lexLoc)
+            {
+                if (stat is DeclNode)
+                {
+                    decl = stat as DeclNode;
+                    Name = decl.DeclsList.Decls[0].Id.Name;
+                }
+                else if (stat is AssignNode)
+                {
+                    assign = stat as AssignNode;
+                    Name = assign.Id.Name;
+                }
+                else
+                {
+                    throw new SemanticExepction("Invalid initialization section in \'for\' cycle", this);
+                }
+            }
+
+            public override T Visit<T>(Visitor<T> v)
+            {
+                if (decl != null)
+                {
+                    return v.Visit(decl);
+                }
+                else
+                {
+                    return v.Visit(assign);
+                }
+            }
+
+        }
+
+        public ForInitializer Init { get; set; }
 
         public StatementNode Iter { get; set; }
 
@@ -491,12 +529,8 @@ namespace ProgramTree
 
         public StatementNode Stat { get; set; }
 
-        public ForNode(StatementNode init, ExprNode cond, StatementNode iter, StatementNode stat, LexLocation lexLoc) : base(lexLoc)
+        public ForNode(ForInitializer init, ExprNode cond, StatementNode iter, StatementNode stat, LexLocation lexLoc) : base(lexLoc)
         {
-            if (!(init is DeclNode || init is AssignNode))
-            {
-                throw new SemanticExepction("Invalid initialization section in \'for\' cycle", this);
-            }
             Init = init;
             Cond = cond;
             if (!(iter is ProcCallNode || iter is AssignNode))
