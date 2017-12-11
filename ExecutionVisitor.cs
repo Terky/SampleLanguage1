@@ -218,7 +218,7 @@ namespace SimpleLang
             FunSymbol fun = ParserHelper.GlobalScope.Get(node.Name) as FunSymbol;
             FormalParams args = fun.Address.Header.Args;
             List<VarSymbol> callArgs = new List<VarSymbol>();
-            foreach (ExprNode expr in node.ActualParams)
+            foreach (ExprNode expr in node.ActParams.exprList)
             {
                 callArgs.Add(expr.Visit(this));
             }

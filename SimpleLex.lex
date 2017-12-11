@@ -7,7 +7,7 @@
 Alpha 	[a-zA-Z_]
 Digit   [0-9] 
 AlphaDigit {Alpha}|{Digit}
-INTNUM  -?{Digit}+
+INTNUM  {Digit}+
 REALNUM {INTNUM}\.{INTNUM}
 BOOLVAL "true"|"false"
 ID {Alpha}{AlphaDigit}*

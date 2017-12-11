@@ -15,14 +15,7 @@
 			public ExprNode eVal;
 			public StatementNode stVal;
 			public BlockNode blVal;
-			public FunHeader fHead;
-            public DeclId declId;
-            public DeclType declType;
-			public FormalParams formParams;
-			public List<ExprNode> eList;
-			public DeclAssign declAssign;
-            public DeclList declList;
-			public ForNode.ForInitializer forInit;
+			public GrammarType gType;
        }
 
 %using ProgramTree;
@@ -36,16 +29,9 @@
 %token <sVal> ID
 
 %type <eVal> arithm_expr ident arithm_term arithm_factor function fun_list fun_call bool_expr bool_term bool_factor not_factor relation return_expr
-%type <stVal> assign statement decl return cond proc_call while_cycle do_while_cycle do_while_cycle for_cycle for_statement 
+%type <stVal> assign statement decl return cond proc_call while_cycle do_while_cycle do_while_cycle for_cycle for_statement for_initializer
 %type <blVal> stlist block
-%type <fHead> fun_header
-%type <formParams> formal_params formal_params_fill
-%type <eList> actual_params actual_params_fill
-%type <declId> decl_id
-%type <declType> type
-%type <declAssign> decl_assign
-%type <declList> decl_list
-%type <forInit> for_initializer
+%type <gType> formal_params formal_params_fill fun_header decl_id type decl_assign decl_list actual_params actual_params_fill
 %%
 
 progr
@@ -58,7 +44,7 @@ fun_list
 	;
 
 function
-    : fun_header block { $$ = new FunNode($1, $2, @$); }
+    : fun_header block { $$ = new FunNode($1 as FunHeader, $2, @$); }
 	;
 
 decl_id
@@ -66,7 +52,8 @@ decl_id
     ;
 
 fun_header
-    : type decl_id LEFT_BRACKET formal_params RIGHT_BRACKET { $$ = new FunHeader($1, $2, $4, @$); }
+    : type decl_id LEFT_BRACKET formal_params RIGHT_BRACKET 
+        { $$ = new FunHeader($1 as DeclType, $2 as DeclId, $4 as FormalParams, @$); }
     ;
 
 formal_params
@@ -75,10 +62,10 @@ formal_params
     ;
 
 formal_params_fill
-    : type decl_id { $$ = new FormalParams($1, $2, @$); }
+    : type decl_id { $$ = new FormalParams($1 as DeclType, $2 as DeclId, @$); }
 	| formal_params_fill COMMA type decl_id  
 	    {
-		    $1.Add($3,$4);
+		    ($1 as FormalParams).Add($3 as DeclType, $4 as DeclId);
 			$$ = $1; 
 		}
 	;
@@ -113,12 +100,12 @@ proc_call
     ;
 
 decl
-    : type decl_list { $$ = new DeclNode($1, $2, @$); }
+    : type decl_list { $$ = new DeclNode($1 as DeclType, $2 as DeclList, @$); }
 	;
 
 decl_list
-    : decl_list COMMA decl_id decl_assign { ($1 as DeclList).Add($3, $4); $$ = $1; }
-    | decl_id decl_assign { $$ = new DeclList($1, $2, @$); }
+    : decl_list COMMA decl_id decl_assign { ($1 as DeclList).Add($3 as DeclId, $4 as DeclAssign); $$ = $1; }
+    | decl_id decl_assign { $$ = new DeclList($1 as DeclId, $2 as DeclAssign, @$); }
     ;
 
 decl_assign
@@ -127,7 +114,7 @@ decl_assign
 	;
 
 fun_call
-    : ID LEFT_BRACKET actual_params RIGHT_BRACKET { $$ = new FunCallNode($1, $3, @$); }
+    : ID LEFT_BRACKET actual_params RIGHT_BRACKET { $$ = new FunCallNode($1, $3 as ActualParams, @$); }
 	;
 
 actual_params
@@ -138,12 +125,12 @@ actual_params
 actual_params_fill
     : bool_expr
         {
-            $$ = new List<ExprNode>();
-		    $$.Add($1);
+            $$ = new ActualParams();
+		    ($$ as ActualParams).Add($1);
         }
 	| actual_params COMMA bool_expr 
 		{
-		    $1.Add($3);
+		    ($1 as ActualParams).Add($3);
 			$$ = $1; 
 		}
 	;
@@ -213,6 +200,8 @@ arithm_factor
 	| fun_call { $$ = $1 as FunCallNode; }
 	| INUM { $$ = new IntNumNode($1, @$); }
 	| DNUM { $$ = new DoubleNumNode($1, @$); }
+    | MINUS INUM { $$ = new IntNumNode(-$2, @$); }
+    | MINUS DNUM { $$ = new DoubleNumNode(-$2, @$); }
 	;
 
 block
@@ -230,7 +219,7 @@ do_while_cycle
 for_cycle     
     : FOR LEFT_BRACKET for_initializer SEMICOLON bool_expr SEMICOLON for_statement RIGHT_BRACKET statement
         {
-            $$ = new ForNode($3, $5, $7, $9, @$);
+            $$ = new ForNode($3 as ForNode.ForInitializer, $5, $7, $9, @$);
         }
     ;
 

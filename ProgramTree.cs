@@ -10,7 +10,9 @@ namespace ProgramTree
 
     public enum OpType { Plus, Minus, Div, Mult, Or, And, Not, Lt, Gt, Let, Get, Eq, Neq };
 
-    public class DeclList
+    public abstract class GrammarType { } // Базовый класс для грамматических типов
+
+    public class DeclList: GrammarType
     {
         public class Decl
         {
@@ -45,7 +47,7 @@ namespace ProgramTree
         }
 }
 
-    public class FunHeader
+    public class FunHeader: GrammarType
     {
         public LexLocation LexLoc { get; set; }
 
@@ -68,7 +70,7 @@ namespace ProgramTree
         }
     }
 
-    public class DeclAssign
+    public class DeclAssign: GrammarType
     {
         public LexLocation LexLoc { get; set; }
 
@@ -81,7 +83,22 @@ namespace ProgramTree
         }
     }
 
-    public class FormalParams
+    public class ActualParams : GrammarType
+    {
+        // HACK: should be private
+        public List<ExprNode> exprList = new List<ExprNode>();
+
+        public int Count { get; set; }
+
+        public void Add(ExprNode expr)
+        {
+            exprList.Add(expr);
+            ++Count;
+        }
+
+    }
+
+    public class FormalParams: GrammarType
     {
         public class FormalParam
         {
@@ -119,7 +136,7 @@ namespace ProgramTree
         }
     }
 
-    public class DeclType
+    public class DeclType: GrammarType
     {
         public LexLocation LexLoc { get; set; }
 
@@ -138,7 +155,7 @@ namespace ProgramTree
         }
     }
 
-    public class DeclId
+    public class DeclId: GrammarType
     {
 
         public LexLocation LexLoc { get; set; }
@@ -388,19 +405,19 @@ namespace ProgramTree
 
     public class FunCallNode : ExprNode
     {
-        public FunCallNode(string name, List<ExprNode> actualParams, LexLocation lexLoc) : base(lexLoc)
+        public FunCallNode(string name, ActualParams actualParams, LexLocation lexLoc) : base(lexLoc)
         {
             Name = name;
             if (actualParams == null)
             {
-                ActualParams = new List<ExprNode>();
+                ActParams = new ActualParams();
             } else
             {
-                ActualParams = actualParams;
+                ActParams = actualParams;
             }
         }
 
-        public List<ExprNode> ActualParams { get; set; }
+        public ActualParams ActParams { get; set; }
 
         public string Name { get; set; }
 

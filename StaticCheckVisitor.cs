@@ -192,13 +192,13 @@ namespace SimpleLang
             }
             FunSymbol fun = sym as FunSymbol;
             FormalParams args = fun.Address.Header.Args;
-            if (args.FormalParamList.Count != node.ActualParams.Count)
+            if (args.FormalParamList.Count != node.ActParams.Count)
             {
                 throw new SemanticExepction("Неверное количество параметров при вызове функции " + node.Name, node);
             }
 
             List<Symbol.ValueType> argsType = new List<Symbol.ValueType>();
-            foreach (ExprNode expr in node.ActualParams)
+            foreach (ExprNode expr in node.ActParams.exprList)
             {
                 argsType.Add(expr.Visit(this));
             }

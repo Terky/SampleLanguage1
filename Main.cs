@@ -11,7 +11,7 @@ namespace SimpleCompiler
     {
         public static void Main()
         {
-            string FileName = @"..\..\fib.txt";
+            string FileName = @"../../c.txt";
             try
             {
                 string Text = File.ReadAllText(FileName);
