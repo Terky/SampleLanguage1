@@ -3,9 +3,9 @@
 // (see accompanying GPPGcopyright.rtf)
 
 // GPPG version 1.3.6
-// Machine:  MacBook-Air-Artem.local
-// DateTime: 12/11/2017 11:15:15 AM
-// UserName: artemburmistrov
+// Machine:  DESKTOP-32TFS7K
+// DateTime: 18.12.2017 13:23:46
+// UserName: wowit
 // Input file <SimpleYacc.y>
 
 // options: no-lines gplex
@@ -558,6 +558,7 @@ public class Parser: ShiftReduceParser<ValueType, LexLocation>
     else
         return CharToString((char)terminal);
   }
+
 
 }
 }

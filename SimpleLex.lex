@@ -14,6 +14,10 @@ ID {Alpha}{AlphaDigit}*
 
 %%
 
+[\t] {
+
+}
+
 {INTNUM} { 
   yylval.iVal = int.Parse(yytext); 
   return (int)Tokens.INUM; 
