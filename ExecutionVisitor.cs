@@ -10,12 +10,6 @@ namespace SimpleLang
 {
     public class ExecutionVisitor : Visitor<VarSymbol>
     {
-        public enum State
-        {
-            RETURN,
-            RUN
-        }
-
         private State execState = State.RUN;
 
         public State ExecState

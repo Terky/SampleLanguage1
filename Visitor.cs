@@ -8,6 +8,11 @@ namespace SimpleLang
 {
     public abstract class Visitor<T>
     {
+        public enum State
+        {
+            RETURN,
+            RUN
+        }
         public abstract T Visit(MainProgramNode node);
         public abstract T Visit(FunNode node);
         public abstract T Visit(IdNode node);

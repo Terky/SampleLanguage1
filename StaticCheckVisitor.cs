@@ -9,6 +9,20 @@ namespace SimpleLang
 {
     public class StaticCheckVisitor : Visitor<Symbol.ValueType>
     {
+        private State checkState = State.RUN;
+
+        public State CheckState
+        {
+            get
+            {
+                return checkState;
+            }
+
+            set
+            {
+                checkState = value;
+            }
+        }
 
         public override Symbol.ValueType Visit(MainProgramNode node)
         {
@@ -31,13 +45,13 @@ namespace SimpleLang
                 sym.Type = arg.Type;
                 ParserHelper.CurrentScope().Put(arg.Name.Name, sym);
             }
-            bool hasReturn = false;
+            checkState = State.RUN;
             Symbol.ValueType returnType = Symbol.ValueType.UNKNOWN;
             foreach (StatementNode stat in node.Body.StList)
             {
                 if (stat is ReturnNode)
                 {
-                    hasReturn = true;
+                    checkState = State.RETURN;
                     Symbol.ValueType funType = node.Header.Type;
                     //ExprNode returnExpr = (stat as ReturnNode).Expr;
                     //if (returnExpr != null)
@@ -60,7 +74,7 @@ namespace SimpleLang
                     stat.Visit(this);
                 }
             }
-            if (!hasReturn && node.Header.Type != Symbol.ValueType.VOID)
+            if (checkState == State.RUN && node.Header.Type != Symbol.ValueType.VOID)
             {
                 throw new SemanticExepction("Пропущено выражение return в функции " + node.Header.Name, node);
             }
@@ -85,6 +99,9 @@ namespace SimpleLang
             ParserHelper.enterScope();
             foreach (StatementNode st in node.StList)
             {
+                if (st is ReturnNode) {
+                    checkState = State.RETURN;
+                }
                 st.Visit(this);
             }
             ParserHelper.leaveScope();
