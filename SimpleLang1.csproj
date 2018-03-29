@@ -34,6 +34,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Hime.Redist">
+      <HintPath>net461\Hime.Redist.dll</HintPath>
+    </Reference>
+    <Reference Include="Hime.SDK">
+      <HintPath>net461\Hime.SDK.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
