@@ -1,0 +1,208 @@
+grammar PascalPlusPlusGram
+{
+  options
+  {
+    Axiom = "progr"; // the top variable for this grammar
+    Separator = "SEPARATOR"; // the terminal that represent white space
+    OutputPath = "../../";
+  }
+  terminals
+  {
+    WHITE_SPACE -> U+0020 | U+0009 | U+000B | U+000C ;
+    SEPARATOR   -> WHITE_SPACE+ | U+A ;
+    Alpha       ->  [a-zA-Z_];
+    Digit       ->  [0-9];
+    AlphaDigit  ->  Alpha | Digit;
+    INTNUM      ->  Digit+;
+    REALNUM     ->  INTNUM '.' INTNUM;
+    BOOLVAL     ->  'true' | 'false';
+    Id          ->  Alpha AlphaDigit*;
+  }
+  rules
+  {
+    progr
+        -> fun_list @onMainProgramm
+	    ;
+
+    fun_list
+        -> function
+	    | fun_list function
+	    ;
+
+    function
+        -> fun_header block
+	    ;
+
+    decl_id
+        -> Id
+        ;
+
+    fun_header
+        -> type decl_id '(' formal_params ')'
+        ;
+
+    formal_params
+        -> formal_params_fill
+        |
+        ;
+
+    formal_params_fill
+        -> type decl_id
+	    | formal_params_fill ',' type decl_id
+	    ;
+
+    stlist
+        -> statement
+	    | stlist statement
+	    ;
+
+    statement
+        -> assign ';'
+	    | cond
+	    | decl ';'
+	    | block
+	    | return ';'
+	    | proc_call ';'
+        | while_cycle
+	    | do_while_cycle ';'
+        | for_cycle
+	    | ';'
+        ;
+
+    proc_call
+        -> fun_call
+        ;
+
+    decl
+        -> type decl_list
+	    ;
+
+    decl_list
+        -> decl_list ',' decl_id decl_assign
+        | decl_id decl_assign
+        ;
+
+    decl_assign
+	    -> '=' bool_expr
+	    |
+	    ;
+
+    fun_call
+        -> Id '(' actual_params ')'
+	    ;
+
+    actual_params
+	    -> actual_params_fill
+	    |
+	    ;
+
+    actual_params_fill
+        -> bool_expr
+	    | actual_params ',' bool_expr
+	    ;
+
+    ident
+        -> Id
+	    ;
+
+    type
+        -> Id
+        ;
+	
+    assign
+        -> ident '=' bool_expr
+	    ;
+
+    cond
+        -> 'if' '(' bool_expr ')' statement 'else' statement
+	    | 'if' '(' bool_expr ')' statement
+	    ;
+
+    bool_expr
+        -> bool_expr '||' bool_term
+	    | bool_term
+	    ;
+
+    bool_term
+        -> bool_term '&&' not_factor
+	    | not_factor
+	    ;
+
+    not_factor
+        -> bool_factor
+	    | '!' bool_factor
+	    ;
+
+    bool_factor
+        -> BOOLVAL
+	    | relation
+	    ;
+
+    relation
+        -> arithm_expr '>' arithm_expr
+	    | arithm_expr '<' arithm_expr
+	    | arithm_expr '<=' arithm_expr
+	    | arithm_expr '>=' arithm_expr
+	    | arithm_expr '==' arithm_expr
+	    | arithm_expr '!=' arithm_expr
+	    | arithm_expr 
+	    ;
+
+    arithm_expr
+        -> arithm_expr '+' arithm_term
+	    | arithm_expr '-' arithm_term
+	    | arithm_term
+	    ;
+
+    arithm_term
+        -> arithm_term '*' arithm_factor
+	    | arithm_term '/' arithm_factor
+	    | arithm_factor
+	    ;
+
+    arithm_factor
+        -> '(' bool_expr ')'
+	    | ident
+	    | fun_call
+	    | INTNUM
+	    | REALNUM
+        | '-' INTNUM
+        | '-' REALNUM
+	    ;
+
+    block
+        -> '{' stlist '}'
+	    ;
+
+    while_cycle
+        -> 'while' '(' bool_expr ')' statement
+	    ;
+
+    do_while_cycle
+        -> 'do' statement 'while' '(' bool_expr ')'
+	    ;
+
+    for_cycle
+        -> 'for' '(' for_initializer ';' bool_expr ';' for_statement ')' statement
+        ;
+
+    for_initializer
+        -> decl
+        | assign
+        ;
+
+    for_statement
+        -> assign
+        | proc_call
+        ;
+
+    return
+        -> 'return' return_expr
+        ;
+
+    return_expr
+	    -> bool_expr
+	    |
+	    ;
+  }
+}
