@@ -59,7 +59,7 @@ namespace SimpleCompiler
             //}
             //Console.ReadLine();
             // Define an inline grammar
-            string fileName = @"../../Pascal++.gram";
+            string fileName = @"../../SimpleLangGram1.gram";
             // Setup the compilation task
             CompilationTask task = new CompilationTask();
             task.AddInputFile(fileName);
@@ -68,9 +68,8 @@ namespace SimpleCompiler
             task.CodeAccess = Modifier.Public;
             // Execute
             task.Execute();
-
             // Load the generated assembly
-            AssemblyReflection assembly = new AssemblyReflection(@"../../PascalPlusPlusGram.dll");
+            AssemblyReflection assembly = new AssemblyReflection(@"../../SimpleLangGram.dll");
 
             // define some input string
             string input = System.IO.File.ReadAllText(@"../../a.txt");
@@ -80,13 +79,19 @@ namespace SimpleCompiler
             var parser = assembly.GetParser(input);
             // parse the input
             ParseResult result = parser.Parse();
-            foreach (var err in result.Errors)
+            if (!result.IsSuccess)
             {
-                Console.WriteLine(err.ToString());
+                foreach (var err in result.Errors)
+                {
+                    Console.WriteLine(err.ToString());
+                }
             }
-            // get the produced AST root
-            ASTNode root = result.Root;
-            Print(root, new bool[] { });
+            else
+            {
+                // get the produced AST root
+                ASTNode root = result.Root;
+                Print(root, new bool[] { });
+            }
             Console.ReadLine();
         }
 
